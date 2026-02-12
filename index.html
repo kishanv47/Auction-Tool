@@ -12,7 +12,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Montserrat:wght@500;700;900&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -30,15 +30,15 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
+
         window.firebaseDB = db;
         window.firestoreDoc = doc;
         window.firestoreSetDoc = setDoc;
         window.firestoreGetDoc = getDoc;
-        
+
         console.log("Firebase initialized!");
     </script>
-    
+
     <style>
         :root {
             /* Color Palette - Premium Dark Theme */
@@ -115,22 +115,79 @@
             }
         }
 
-        @keyframes hammerPound {
+        @keyframes stampIn {
             0% {
-                transform: scale(1);
+                opacity: 0;
+                transform: scale(2.5) rotate(-10deg);
             }
 
             50% {
-                transform: scale(1.2);
+                opacity: 1;
+                transform: scale(1) rotate(-10deg);
+            }
+
+            70% {
+                transform: scale(1.1) rotate(-10deg);
             }
 
             100% {
-                transform: scale(1);
+                transform: scale(1) rotate(-10deg);
             }
         }
 
         .animate-hammer {
             animation: hammerRotate 0.8s ease-in-out;
+        }
+
+        .animate-stamp {
+            animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* --- Admin & Controls --- */
+        .admin-controls-hidden {
+            display: none !important;
+        }
+
+        .admin-lock-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+
+        .admin-lock-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .viewer-banner {
+            background: var(--warning);
+            color: #1e293b;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: none;
+            /* Show only when locked */
+        }
+
+        body.is-locked .viewer-banner {
+            display: block;
+        }
+
+        body.is-locked .admin-only {
+            pointer-events: none;
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        /* Exception for the lock button itself */
+        body.is-locked .brand {
+            pointer-events: auto;
+            opacity: 1;
+            filter: none;
         }
 
         /* --- Layout --- */
@@ -601,6 +658,7 @@
 
 <body>
 
+    <div class="viewer-banner">👁️ Viewer Mode (ReadOnly) - Ask Admin to Unlock for Bidding</div>
     <div class="app-container">
         <!-- Header -->
         <header class="header">
@@ -610,6 +668,7 @@
                     <h1>Auction Master v2.1</h1>
                     <p>Ultimate Player Auction System</p>
                 </div>
+                <button class="admin-lock-btn" onclick="app.toggleAdmin()" title="Admin Lock">🔒</button>
             </div>
             <nav class="nav-tabs">
                 <button class="nav-btn active" onclick="app.switchTab('setup')">⚙️ Setup</button>
@@ -784,85 +843,85 @@
 
                     <!-- Bid Increments Settings -->
                     <div>
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <label class="form-label" style="font-size: 0.85rem; margin: 0;">Set Auto-Bid Increment
-                                (Lakhs)</label>
-                        </div>
-                        <div class="bid-controls">
-                            <button class="bid-btn" id="btnStep1" onclick="app.setBidStep(1)">1L</button>
-                            <button class="bid-btn" id="btnStep5" onclick="app.setBidStep(5)">5L</button>
-                            <button class="bid-btn" id="btnStep10" onclick="app.setBidStep(10)">10L</button>
-                            <button class="bid-btn" id="btnStep20" onclick="app.setBidStep(20)">20L</button>
-                            <button class="bid-btn" id="btnStep25" onclick="app.setBidStep(25)">25L</button>
-                            <button class="bid-btn" id="btnStep50" onclick="app.setBidStep(50)">50L</button>
-                        </div>
+                        <label class="form-label" style="font-size: 0.85rem; margin: 0;">Set Auto-Bid Increment
+                            (Lakhs)</label>
+                        <button class="btn btn-outline btn-sm admin-only" onclick="app.undoBid()"
+                            style="font-size: 0.8rem; padding: 4px 10px;">↩ Undo Last Bid</button>
                     </div>
-
-                    <!-- Teams Grid -->
-                    <h3 class="form-label">Active Bidders</h3>
-                    <div class="team-grid" id="auctionTeamGrid"></div>
-
-                    <!-- Sell Button -->
-                    <button class="btn btn-success btn-block"
-                        style="padding: 20px; font-size: 1.3rem; margin-top: auto;" onclick="app.sellPlayer()">
-                        🔨 SOLD
-                    </button>
+                    <div class="bid-controls">
+                        <button class="bid-btn" id="btnStep1" onclick="app.setBidStep(1)">1L</button>
+                        <button class="bid-btn" id="btnStep5" onclick="app.setBidStep(5)">5L</button>
+                        <button class="bid-btn" id="btnStep10" onclick="app.setBidStep(10)">10L</button>
+                        <button class="bid-btn" id="btnStep20" onclick="app.setBidStep(20)">20L</button>
+                        <button class="bid-btn" id="btnStep25" onclick="app.setBidStep(25)">25L</button>
+                        <button class="bid-btn" id="btnStep50" onclick="app.setBidStep(50)">50L</button>
+                    </div>
                 </div>
+
+                <!-- Teams Grid -->
+                <h3 class="form-label">Active Bidders</h3>
+                <div class="team-grid" id="auctionTeamGrid"></div>
+
+                <!-- Sell Button -->
+                <button class="btn btn-success btn-block" style="padding: 20px; font-size: 1.3rem; margin-top: auto;"
+                    onclick="app.sellPlayer()">
+                    🔨 SOLD
+                </button>
             </div>
-        </section>
+    </div>
+    </section>
 
-        <!-- TEAMS TAB -->
-        <section id="teams" class="view-section">
-            <h2 class="form-label" style="font-size: 1.5rem; margin-bottom: 20px;">Team Squads</h2>
-            <div class="grid-3" id="teamsFullGrid">
-                <!-- Detailed team cards go here -->
-            </div>
-        </section>
+    <!-- TEAMS TAB -->
+    <section id="teams" class="view-section">
+        <h2 class="form-label" style="font-size: 1.5rem; margin-bottom: 20px;">Team Squads</h2>
+        <div class="grid-3" id="teamsFullGrid">
+            <!-- Detailed team cards go here -->
+        </div>
+    </section>
 
-        <!-- DASHBOARD TAB -->
-        <section id="dashboard" class="view-section">
-            <div class="grid-4" style="margin-bottom: 30px;">
-                <div class="stat-card card">
-                    <div class="stat-val" id="dashTeams">0</div>
-                    <div style="color:var(--text-muted)">Teams</div>
-                </div>
-                <div class="stat-card card">
-                    <div class="stat-val" id="dashSold">0</div>
-                    <div style="color:var(--text-muted)">Sold</div>
-                </div>
-                <div class="stat-card card">
-                    <div class="stat-val" id="dashSpent" style="color:var(--success)">0L</div>
-                    <div style="color:var(--text-muted)">Spent</div>
-                </div>
-                <div class="stat-card card">
-                    <div class="stat-val" id="dashUnsold" style="color:var(--warning)">0</div>
-                    <div style="color:var(--text-muted)">Unsold</div>
-                </div>
+    <!-- DASHBOARD TAB -->
+    <section id="dashboard" class="view-section">
+        <div class="grid-4" style="margin-bottom: 30px;">
+            <div class="stat-card card">
+                <div class="stat-val" id="dashTeams">0</div>
+                <div style="color:var(--text-muted)">Teams</div>
             </div>
-            <div class="grid-3" id="dashTeamList"></div>
-        </section>
+            <div class="stat-card card">
+                <div class="stat-val" id="dashSold">0</div>
+                <div style="color:var(--text-muted)">Sold</div>
+            </div>
+            <div class="stat-card card">
+                <div class="stat-val" id="dashSpent" style="color:var(--success)">0L</div>
+                <div style="color:var(--text-muted)">Spent</div>
+            </div>
+            <div class="stat-card card">
+                <div class="stat-val" id="dashUnsold" style="color:var(--warning)">0</div>
+                <div style="color:var(--text-muted)">Unsold</div>
+            </div>
+        </div>
+        <div class="grid-3" id="dashTeamList"></div>
+    </section>
 
-        <!-- PLAYERS TAB -->
-        <section id="players" class="view-section">
-            <h2 class="form-label" style="font-size: 1.5rem; margin-bottom: 20px;">Player Database</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Role</th>
-                            <th>Base</th>
-                            <th>Status</th>
-                            <th>Sold To</th>
-                            <th>Price</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="playerTableBody"></tbody>
-                </table>
-            </div>
-        </section>
+    <!-- PLAYERS TAB -->
+    <section id="players" class="view-section">
+        <h2 class="form-label" style="font-size: 1.5rem; margin-bottom: 20px;">Player Database</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Base</th>
+                        <th>Status</th>
+                        <th>Sold To</th>
+                        <th>Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="playerTableBody"></tbody>
+            </table>
+        </div>
+    </section>
     </div>
 
     <!-- SOLD OVERLAY -->
@@ -897,8 +956,10 @@
                     currentBid: 0,
                     currentBidder: null,
                     bidStep: 20, // Default increment
-                    auctionStarted: false
-                }
+                    auctionStarted: false,
+                    bidHistory: []
+                },
+                isAdmin: false, // Client-side admin lock state
             },
 
             init() {
@@ -921,7 +982,7 @@
                     this.continueInit();
                 }
             },
-            
+
             continueInit() {
                 const saved = localStorage.getItem('auction_v2_data');
                 if (saved) {
@@ -966,9 +1027,46 @@
 
                 // Set default bid step UI
                 this.setBidStep(this.data.state.bidStep || 20);
+
+                // Initialize Admin UI
+                this.checkAdminUI();
+            },
+
+            // --- ADMIN LOCK ---
+            toggleAdmin() {
+                if (this.isAdmin) {
+                    // Lock it
+                    this.isAdmin = false;
+                    this.checkAdminUI();
+                } else {
+                    // Unlock it
+                    const pin = prompt("Enter Admin PIN to Unlock:");
+                    if (pin === "0000") {
+                        this.isAdmin = true;
+                        this.checkAdminUI();
+                    } else if (pin !== null) {
+                        alert("Wrong PIN!");
+                    }
+                }
+            },
+
+            checkAdminUI() {
+                const body = document.body;
+                const lockBtn = document.querySelector('.admin-lock-btn');
+
+                if (this.isAdmin) {
+                    body.classList.remove('is-locked');
+                    lockBtn.innerText = "🔓";
+                    lockBtn.title = "Lock Interface";
+                } else {
+                    body.classList.add('is-locked');
+                    lockBtn.innerText = "🔒";
+                    lockBtn.title = "Unlock Interface";
+                }
             },
 
             triggerImageUpload(pId) {
+                if (!this.isAdmin) return alert("Admin Lock Active!");
                 this.uploadingPlayerId = pId;
                 document.getElementById('playerImgUpload').click();
             },
@@ -999,7 +1097,7 @@
             save() {
                 try {
                     localStorage.setItem('auction_v2_data', JSON.stringify(this.data));
-                    
+
                     // Cloud Save to Firebase
                     if (window.firebaseDB) {
                         window.firestoreSetDoc(window.firestoreDoc(window.firebaseDB, 'auctions', 'current'), {
@@ -1156,11 +1254,13 @@
                 this.data.state.currentItem = player;
                 this.data.state.currentBid = player.basePrice;
                 this.data.state.currentBidder = null;
+                this.data.state.bidHistory = []; // Reset history for new player
 
                 this.renderAuctionUI();
             },
 
             reviveUnsold() {
+                if (!this.isAdmin) return alert("Admin Lock Active!");
                 const count = this.data.players.filter(p => p.status === 'unsold').length;
                 if (count === 0) return alert("No unsold players to revive!");
 
@@ -1231,6 +1331,8 @@
             },
 
             placeBid(teamId) {
+                if (!this.isAdmin) return alert("Admin Lock Active! Unlock to Bid.");
+
                 const team = this.data.teams.find(t => t.id === teamId);
                 let newBid = this.data.state.currentBid;
 
@@ -1241,13 +1343,31 @@
 
                 if (team.remaining < newBid) return alert("Low Budget!");
 
+                this.data.state.bidHistory.push({
+                    bid: this.data.state.currentBid,
+                    bidder: this.data.state.currentBidder
+                });
+
                 this.data.state.currentBid = newBid;
                 this.data.state.currentBidder = teamId;
                 this.updateBidBoard();
                 this.renderAuctionTeams();
             },
 
+            undoBid() {
+                if (!this.isAdmin) return alert("Admin Lock Active!");
+                if (!this.data.state.bidHistory || this.data.state.bidHistory.length === 0) return alert("No bids to undo for this player!");
+
+                const lastState = this.data.state.bidHistory.pop();
+                this.data.state.currentBid = lastState.bid;
+                this.data.state.currentBidder = lastState.bidder;
+
+                this.updateBidBoard();
+                this.renderAuctionTeams();
+            },
+
             sellPlayer() {
+                if (!this.isAdmin) return alert("Admin Lock Active!");
                 if (!this.data.state.currentBidder) return alert("No Bidder!");
 
                 const p = this.data.state.currentItem;
@@ -1266,6 +1386,7 @@
             },
 
             skipPlayer() {
+                if (!this.isAdmin) return alert("Admin Lock Active!");
                 // Move current item to end of array to cycle it
                 const p = this.data.state.currentItem;
                 // Remove form index
@@ -1277,6 +1398,7 @@
             },
 
             unsoldPlayer() {
+                if (!this.isAdmin) return alert("Admin Lock Active!");
                 const p = this.data.state.currentItem;
                 p.status = 'unsold';
                 this.save();
@@ -1295,15 +1417,28 @@
                 modal.style.display = 'flex';
                 hammer.classList.add('animate-hammer');
 
-                // Trigger Confetti
+                // Add Stamp Animation
+                const soldText = document.querySelector('.sold-text');
+                soldText.classList.remove('animate-stamp');
+                void soldText.offsetWidth; // Trigger reflow
+                soldText.classList.add('animate-stamp');
+
+                // Trigger Confetti - Multiple bursts for "Pro" feel
                 if (window.confetti) {
-                    var duration = 3000;
-                    var end = Date.now() + duration;
-                    (function frame() {
-                        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#6366f1', '#06b6d4', '#10b981'] });
-                        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#6366f1', '#06b6d4', '#10b981'] });
-                        if (Date.now() < end) requestAnimationFrame(frame);
-                    }());
+                    const count = 200;
+                    const defaults = { origin: { y: 0.7 } };
+
+                    function fire(particleRatio, opts) {
+                        confetti(Object.assign({}, defaults, opts, {
+                            particleCount: Math.floor(count * particleRatio)
+                        }));
+                    }
+
+                    fire(0.25, { spread: 26, startVelocity: 55 });
+                    fire(0.2, { spread: 60 });
+                    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+                    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+                    fire(0.1, { spread: 120, startVelocity: 45 });
                 }
 
                 // Voice Over
