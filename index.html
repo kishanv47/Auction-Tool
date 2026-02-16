@@ -1118,11 +1118,26 @@
 
                         <div
                             style="width: 100%; border-top: 1px solid var(--border); padding-top: 20px; margin-top: auto;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <!-- Spin Overlay -->
+                            <div id="spinOverlay"
+                                style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.8); z-index:10; border-radius:20px; align-items:center; justify-content:center; flex-direction:column;">
+                                <div style="font-size:3rem;">🎰</div>
+                                <div
+                                    style="font-family:'Chakra Petch'; font-size:1.5rem; color:#fbbf24; margin-top:10px;">
+                                    RANDOMIZING...</div>
+                            </div>
+
+                            <button id="btnSpin" class="btn btn-warning btn-block"
+                                style="display:none; margin-bottom:15px; font-size:1.2rem;"
+                                onclick="app.spinForPlayer()">🎰 SPIN FOR PLAYER</button>
+
+                            <div id="playerActions"
+                                style="display: none; justify-content: space-between; margin-bottom: 10px;">
                                 <span style="color: var(--text-muted);">Base Price</span>
                                 <span style="font-weight: 700; color: var(--text-main);" id="aucBasePrice">-</span>
                             </div>
-                            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                            <div id="playerControlBtns"
+                                style="display: none; gap: 10px; justify-content: center; margin-top: 10px;">
                                 <button class="btn btn-outline btn-sm" onclick="app.skipPlayer()">Skip</button>
                                 <button class="btn btn-outline btn-sm"
                                     style="color: var(--danger); border-color: var(--danger);"
@@ -1276,47 +1291,38 @@
                                 const cloudData = docSnap.data();
                                 this.data = { ...this.data, ...cloudData.data };
                                 console.log("Loaded from cloud!");
+                                this.setupUI();
+                            } else {
+                                // Cloud empty? Check for local migration
+                                console.log("No cloud data. Checking local for migration...");
+                                const localData = localStorage.getItem('auction_v2_data');
+                                if (localData) {
+                                    try {
+                                        const parsed = JSON.parse(localData);
+                                        this.data = { ...this.data, ...parsed };
+                                        console.log("Migrating local data to cloud...");
+                                        this.save();
+                                    } catch (e) { console.error("Migration error:", e); }
+                                }
+                                this.setupUI();
                             }
-                            this.continueInit();
                         })
                         .catch(err => {
                             console.error("Cloud load error:", err);
-                            this.continueInit();
+                            this.setupUI();
                         });
                 } else {
-                    this.continueInit();
+                    alert("Firebase not initialized! Application may not save data.");
+                    this.setupUI();
                 }
             },
 
-            continueInit() {
-                const saved = localStorage.getItem('auction_v2_data');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    this.data = { ...this.data, ...parsed };
+            setupUI() {
+                // Determine if we need to dedup based on data source?
+                // For safety, let's always run deduplication on start
+                this.deduplicateTeams();
 
-                    // ONE-TIME FIX: Remove duplicate teams
-                    const uniqueTeams = [];
-                    const seenNames = new Set();
-                    this.data.teams.forEach(t => {
-                        const n = t.name.trim().toLowerCase();
-                        if (!seenNames.has(n)) {
-                            seenNames.add(n);
-                            uniqueTeams.push(t);
-                        } else {
-                            // Merge bug fix: ensure the survivor has players if the duplicate does? 
-                            // Actually, let's keep the one that has players or lower remaining budget (most active)
-                            const existing = uniqueTeams.find(ut => ut.name.trim().toLowerCase() === n);
-                            if (t.players.length > existing.players.length || t.remaining < existing.remaining) {
-                                // Replace the existing inactive one with this active one
-                                uniqueTeams[uniqueTeams.indexOf(existing)] = t;
-                            }
-                        }
-                    });
-                    this.data.teams = uniqueTeams;
-                    this.save(); // Save cleaned data
-
-                    if (!this.data.settings) this.data.settings = { setsEnabled: false, sets: { 1: 'Batsman', 2: 'Bowler', 3: 'All-Rounder', 4: 'Wicket-Keeper' } };
-                }
+                if (!this.data.settings) this.data.settings = { setsEnabled: false, sets: { 1: 'Batsman', 2: 'Bowler', 3: 'All-Rounder', 4: 'Wicket-Keeper' } };
 
                 // UI Init
                 document.getElementById('setsEnabled').checked = this.data.settings.setsEnabled;
@@ -1401,16 +1407,18 @@
 
             save() {
                 try {
-                    localStorage.setItem('auction_v2_data', JSON.stringify(this.data));
-
                     // Cloud Save to Firebase
                     if (window.firebaseDB) {
                         window.firestoreSetDoc(window.firestoreDoc(window.firebaseDB, 'auctions', 'current'), {
                             data: this.data,
                             lastUpdated: new Date().toISOString()
-                        }).catch(err => console.error("Cloud save error:", err));
+                        }).catch(err => {
+                            console.error("Cloud save error:", err);
+                        });
+                    } else {
+                        console.warn("Firebase not available, data not saved.");
                     }
-                } catch (e) { alert("Storage Full! Cannot save image."); }
+                } catch (e) { console.error("Save failed:", e); }
             },
 
             saveSettings() {
@@ -1519,19 +1527,26 @@
                 this.nextPlayer();
             },
 
+            normalizeRole(role) {
+                return role.toLowerCase().replace(/[^a-z0-9]/g, '');
+            },
+
             nextPlayer() {
                 let pending = this.data.players.filter(p => p.status === 'pending');
 
                 // Sets Logic
                 if (this.data.settings.setsEnabled) {
-                    let setRole = this.data.settings.sets[this.data.state.currentSetIndex];
-                    let setPlayers = pending.filter(p => p.role === setRole);
+                    let rawSetRole = this.data.settings.sets[this.data.state.currentSetIndex];
+                    let normSetRole = this.normalizeRole(rawSetRole);
+
+                    let setPlayers = pending.filter(p => this.normalizeRole(p.role) === normSetRole);
 
                     // If no players in this set, move to next
                     while (setPlayers.length === 0 && this.data.state.currentSetIndex < 4) {
                         this.data.state.currentSetIndex++;
-                        setRole = this.data.settings.sets[this.data.state.currentSetIndex];
-                        setPlayers = pending.filter(p => p.role === setRole);
+                        rawSetRole = this.data.settings.sets[this.data.state.currentSetIndex];
+                        normSetRole = this.normalizeRole(rawSetRole);
+                        setPlayers = pending.filter(p => this.normalizeRole(p.role) === normSetRole);
                     }
 
                     // If still no players (finished all sets), check leftovers or finish
@@ -1548,20 +1563,102 @@
                         }
                     } else {
                         pending = setPlayers; // Restrict pool to this set
+                        console.log(`Set ${this.data.state.currentSetIndex} (${rawSetRole}): ${pending.length} players found.`);
                     }
                 }
 
                 if (pending.length === 0) return alert("No more players!");
 
-                // Randomize Selection
-                const randomIndex = Math.floor(Math.random() * pending.length);
-                const player = pending[randomIndex];
+                // Store pool and show Spin UI
+                this.data.state.pendingPool = pending;
+                this.data.state.currentItem = null;
+
+                // Show "Ready to Spin" state
+                this.renderSpinReadyState();
+            },
+
+            renderSpinReadyState() {
+                // Clear current player view
+                document.getElementById('aucPlayerName').innerText = "???";
+                document.getElementById('aucPlayerRole').innerText = this.data.settings.setsEnabled ?
+                    this.data.settings.sets[this.data.state.currentSetIndex] : "ANY ROLE";
+                document.getElementById('aucBasePrice').innerText = "-";
+                document.getElementById('aucPlayerImgContainer').innerHTML = `<div class="player-placeholder-lg" style="font-size:3rem">🎲</div>`;
+
+                // Toggle Buttons
+                document.getElementById('btnSpin').style.display = 'block';
+                document.getElementById('playerActions').style.display = 'none';
+                document.getElementById('playerControlBtns').style.display = 'none';
+
+                // Hide bids
+                document.getElementById('currentBidAmt').innerText = "-";
+                document.getElementById('currentBidTeam').innerText = "Spin to select player";
+            },
+
+            spinForPlayer() {
+                const pool = this.data.state.pendingPool;
+                if (!pool || pool.length === 0) return this.nextPlayer(); // Safety fallback
+
+                const btn = document.getElementById('btnSpin');
+                btn.disabled = true;
+                btn.innerText = "SPINNING...";
+
+                // Animation Config
+                let duration = 2000; // ms
+                let interval = 100;
+                let startTime = Date.now();
+
+                const animate = () => {
+                    const now = Date.now();
+                    const progress = now - startTime;
+
+                    // Random pick for visual
+                    const rIdx = Math.floor(Math.random() * pool.length);
+                    const p = pool[rIdx];
+
+                    // Simple render
+                    document.getElementById('aucPlayerName').innerText = p.name;
+                    if (p.img) document.getElementById('aucPlayerImgContainer').innerHTML = `<img src="${p.img}" class="player-photo-lg" style="opacity:0.7">`;
+                    else document.getElementById('aucPlayerImgContainer').innerHTML = `<div class="player-placeholder-lg">${p.name.charAt(0)}</div>`;
+
+                    if (progress < duration) {
+                        // Decelerate (increase interval) works better with setTimeout recursion, 
+                        // but simple linear requestAnimationFrame is fine for web perf
+                        requestAnimationFrame(animate);
+                    } else {
+                        // Finish Spin
+                        this.finishSpin(pool);
+                    }
+                };
+
+                animate();
+            },
+
+            finishSpin(pool) {
+                // Actual Random Selection
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                const player = pool[randomIndex];
+
                 this.data.state.currentItem = player;
                 this.data.state.currentBid = player.basePrice;
                 this.data.state.currentBidder = null;
-                this.data.state.bidHistory = []; // Reset history for new player
+                this.data.state.bidHistory = [];
+
+                // Reset UI
+                document.getElementById('btnSpin').style.display = 'none';
+                document.getElementById('btnSpin').disabled = false;
+                document.getElementById('btnSpin').innerText = "🎰 SPIN FOR PLAYER";
+
+                document.getElementById('playerActions').style.display = 'flex';
+                document.getElementById('playerControlBtns').style.display = 'flex';
 
                 this.renderAuctionUI();
+
+                // Voice announcement
+                if ('speechSynthesis' in window) {
+                    const utt = new SpeechSynthesisUtterance("Coming up... " + player.name);
+                    window.speechSynthesis.speak(utt);
+                }
             },
 
             reviveUnsold() {
