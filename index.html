@@ -16,7 +16,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyAqEg0oQyIYjCMEWRhDW9GgLz6Sw7M6pP4",
@@ -35,6 +35,7 @@
         window.firestoreDoc = doc;
         window.firestoreSetDoc = setDoc;
         window.firestoreGetDoc = getDoc;
+        window.firestoreOnSnapshot = onSnapshot;
 
         console.log("Firebase initialized!");
     </script>
@@ -1600,37 +1601,34 @@
             init() {
                 // Try loading from cloud first
                 if (window.firebaseDB) {
-                    window.firestoreGetDoc(window.firestoreDoc(window.firebaseDB, 'auctions', 'current'))
-                        .then(docSnap => {
-                            if (docSnap.exists()) {
-                                const cloudData = docSnap.data();
+                    // Real-time listener
+                    window.firestoreOnSnapshot(window.firestoreDoc(window.firebaseDB, 'auctions', 'current'), (docSnap) => {
+                        if (docSnap.exists()) {
+                            const cloudData = docSnap.data();
+                            // Basic diff check to prevent overwriting local unsaved state if we are the editor? 
+                            // For this simple tool, we assume 'cloud is truth'. 
+                            // But if we are admin and just clicked a button, we don't want to jitter.
+                            // We will simply merge.
+                            if (JSON.stringify(this.data) !== JSON.stringify({ ...this.data, ...cloudData.data })) {
                                 this.data = { ...this.data, ...cloudData.data };
-                                console.log("Loaded from cloud!");
-                                this.setupUI();
+                                console.log("Received live update!");
+                                this.setupUI(); // Re-render everything
                                 this.renderTicker();
-                            } else {
-                                // Cloud empty? Check for local migration
-                                console.log("No cloud data. Checking local for migration...");
-                                const localData = localStorage.getItem('auction_v2_data');
-                                if (localData) {
-                                    try {
-                                        const parsed = JSON.parse(localData);
-                                        this.data = { ...this.data, ...parsed };
-                                        console.log("Migrating local data to cloud...");
-                                        this.save();
-                                    } catch (e) { console.error("Migration error:", e); }
+                                // If we are in auction mode, refresh specific UI
+                                if (this.data.state.auctionStarted) {
+                                    this.renderAuctionUI();
                                 }
-                                this.setupUI();
-                                this.renderTicker();
                             }
-                        })
-                        .catch(err => {
-                            console.error("Cloud load error:", err);
-                            this.setupUI();
-                            this.renderTicker();
-                        });
+                        } else {
+                            console.log("No cloud data found.");
+                            // Try local ONLY on first load if cloud empty? 
+                            // Simplify: just alert or do nothing.
+                        }
+                    }, (err) => {
+                        console.error("Live sync error:", err);
+                    });
                 } else {
-                    alert("Firebase not initialized! Application may not save data.");
+                    alert("Firebase not initialized! Sync unavailable.");
                     this.setupUI();
                 }
             },
