@@ -1647,8 +1647,9 @@
                     auctionStarted: false,
                     bidHistory: []
                 },
-                isAdmin: false, // Client-side admin lock state
             },
+
+            isAdmin: false, // Client-side only - NOT saved to Firebase
 
             init() {
                 // Try loading from cloud first
