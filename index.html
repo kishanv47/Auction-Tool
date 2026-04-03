@@ -1604,6 +1604,36 @@
     </section>
     </div>
 
+    <!-- PRE-ASSIGN OVERLAY -->
+    <div id="preAssignModal" class="modal-overlay">
+        <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; color: var(--text-main); text-align: left; max-width: 500px;">
+            <h2 id="preAssignPlayerName" style="font-size: 1.8rem; margin-bottom: 20px; font-family: 'Chakra Petch', sans-serif;">Assign Player</h2>
+            <div class="form-group">
+                <label class="form-label">Team</label>
+                <select id="preAssignTeam" class="form-control">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Designation</label>
+                <select id="preAssignRole" class="form-control">
+                    <option value="Captain">Captain</option>
+                    <option value="Icon Player">Icon Player</option>
+                    <option value="Retained">Retained</option>
+                    <option value="None">None</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Price (in Crores)</label>
+                <input type="number" id="preAssignPrice" class="form-control" placeholder="e.g. 10.5" step="0.1">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn btn-success btn-block" onclick="app.confirmPreAssign()">Confirm Assignment</button>
+                <button class="btn btn-outline btn-block" onclick="app.closePreAssignModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SOLD OVERLAY -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-content">
@@ -1692,6 +1722,7 @@
                 this.deduplicateTeams();
 
                 if (!this.data.settings) this.data.settings = { setsEnabled: false, sets: { 1: 'Batsman', 2: 'Bowler', 3: 'All-Rounder', 4: 'Wicket-Keeper' } };
+                if (!this.data.settings.sets) this.data.settings.sets = { 1: 'Batsman', 2: 'Bowler', 3: 'All-Rounder', 4: 'Wicket-Keeper' };
 
                 // UI Init
                 document.getElementById('setsEnabled').checked = this.data.settings.setsEnabled;
@@ -1944,6 +1975,7 @@
                 if (this.data.teams.length === 0) return alert("No teams!");
                 document.getElementById('auctionStartOverlay').style.display = 'none';
                 document.getElementById('auctionInterface').style.display = 'grid';
+                this.data.state.auctionStarted = true;
                 this.data.state.currentSetIndex = 1;
                 this.nextPlayer();
             },
@@ -1957,7 +1989,7 @@
             formatCr(lakhs) {
                 if (lakhs === undefined || lakhs === null || lakhs === '-') return '-';
                 const cr = lakhs / 100;
-                if (cr >= 1) {
+                if (Math.abs(cr) >= 1) {
                     // Show up to 2 decimal places, strip trailing zeros
                     return parseFloat(cr.toFixed(2)) + ' Cr';
                 } else {
@@ -1994,9 +2026,15 @@
                                 document.getElementById('setsEnabled').checked = false;
                                 this.save();
                             } else {
+                                this.data.state.auctionStarted = false;
+                                document.getElementById('auctionStartOverlay').style.display = 'block';
+                                document.getElementById('auctionInterface').style.display = 'none';
                                 return alert("Auction Completed!");
                             }
                         } else {
+                            this.data.state.auctionStarted = false;
+                            document.getElementById('auctionStartOverlay').style.display = 'block';
+                            document.getElementById('auctionInterface').style.display = 'none';
                             return alert("Auction Completed! All players sold.");
                         }
                     } else {
@@ -2005,7 +2043,12 @@
                     }
                 }
 
-                if (pending.length === 0) return alert("No more players!");
+                if (pending.length === 0) {
+                    this.data.state.auctionStarted = false;
+                    document.getElementById('auctionStartOverlay').style.display = 'block';
+                    document.getElementById('auctionInterface').style.display = 'none';
+                    return alert("No more players! Auction Completed.");
+                }
 
                 // Store pool and show Spin UI
                 this.data.state.pendingPool = pending;
@@ -2392,6 +2435,76 @@
                 this.nextPlayer();
             },
 
+            // --- PRE-ASSIGN ---
+            openPreAssignModal(playerId) {
+                if (!this.isAdmin) return alert("Admin Lock Active!");
+                if (this.data.teams.length === 0) return alert("No teams available! Please add teams first.");
+                
+                this.preAssignPlayerId = playerId;
+                const p = this.data.players.find(x => x.id === playerId);
+                
+                document.getElementById('preAssignPlayerName').innerText = "Assign: " + p.name;
+                
+                const teamSel = document.getElementById('preAssignTeam');
+                teamSel.innerHTML = '<option value="" disabled selected>Select Team...</option>' + 
+                    this.data.teams.map(t => `<option value="${t.id}">${t.name} (${this.formatCr(t.remaining)} rem)</option>`).join('');
+                    
+                document.getElementById('preAssignPrice').value = '';
+                document.getElementById('preAssignModal').style.display = 'flex';
+            },
+
+            closePreAssignModal() {
+                document.getElementById('preAssignModal').style.display = 'none';
+                this.preAssignPlayerId = null;
+            },
+
+            confirmPreAssign() {
+                const teamId = document.getElementById('preAssignTeam').value;
+                const role = document.getElementById('preAssignRole').value;
+                const priceCr = document.getElementById('preAssignPrice').value;
+
+                if (!teamId) return alert("Please select a team.");
+                if (!priceCr || priceCr < 0) return alert("Please enter a valid price in Crores.");
+
+                const priceLakhs = parseFloat(priceCr) * 100;
+                
+                const p = this.data.players.find(x => x.id === this.preAssignPlayerId);
+                const t = this.data.teams.find(team => team.id.toString() === teamId);
+                
+                if (t.remaining < priceLakhs) {
+                    if (!confirm(`Team only has ${this.formatCr(t.remaining)} remaining. Proceed anyway causing negative purse?`)) return;
+                }
+
+                // Update Player
+                p.status = 'sold';
+                p.soldTo = t.name;
+                p.soldPrice = priceLakhs;
+                
+                if (role !== "None") {
+                    p.name = `${p.name} (${role})`;
+                }
+
+                // Update Team
+                t.players.push(p.id);
+                t.playerCount++;
+                t.remaining -= p.soldPrice;
+                
+                this.save();
+                this.closePreAssignModal();
+                this.renderPlayerTable();
+                
+                // If we are currently showing a relevant tab, update it
+                this.deduplicateTeams();
+                if (document.getElementById('teams').classList.contains('active')) this.renderTeamsTab();
+                if (document.getElementById('dashboard').classList.contains('active')) this.renderDashboard();
+                if (document.getElementById('auction').classList.contains('active')) {
+                    this.renderAuctionTeams();
+                    this.renderPurseTable();
+                }
+                
+                alert(`${p.name} assigned successfully!`);
+            },
+
             // --- EXCEL ---
             exportExcel() {
                 const pSheet = XLSX.utils.json_to_sheet(this.data.players);
@@ -2399,7 +2512,7 @@
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, tSheet, "Teams");
                 XLSX.utils.book_append_sheet(wb, pSheet, "Players");
-                XLSX.writeFile(wb, "action_data.xlsx");
+                XLSX.writeFile(wb, "auction_data.xlsx");
             },
 
             importExcel(input) {
@@ -2418,7 +2531,7 @@
                         const tData = XLSX.utils.sheet_to_json(workbook.Sheets['Teams']);
                         tData.forEach(r => {
                             // Map Excel columns to our format
-                            this.addTeam(r.Name || r.TeamName, r.Budget, r.Logo || r.LogoURL);
+                            this.addTeam(r.Name || r.TeamName || r.name, r.Budget || r.budget, r.Logo || r.LogoURL || r.logo);
                         });
                     }
 
@@ -2426,7 +2539,7 @@
                     if (workbook.Sheets['Players']) {
                         const pData = XLSX.utils.sheet_to_json(workbook.Sheets['Players']);
                         pData.forEach(r => {
-                            this.addPlayer(r.Name || r.PlayerName, r.Role, r.BasePrice || r.Price, r.Image || r.ImageURL || r.ProfilePicture);
+                            this.addPlayer(r.Name || r.PlayerName || r.name, r.Role || r.role, r.BasePrice || r.Price || r.basePrice || r.baseprice, r.Image || r.ImageURL || r.ProfilePicture || r.img);
                         });
                     }
                     alert("Import Complete!");
@@ -2579,7 +2692,10 @@
                         <td>${p.role}</td><td>${this.formatCr(p.basePrice)}</td>
                         <td><span class="status-badge ${p.status === 'sold' ? 'status-sold' : ''}">${p.status}</span></td>
                         <td>${p.soldTo || '-'}</td><td>${p.soldPrice ? this.formatCr(p.soldPrice) : '-'}</td>
-                        <td><button class="btn btn-outline btn-sm" onclick="app.triggerImageUpload(${p.id})">📷 Edit Pic</button></td>
+                        <td>
+                            <button class="btn btn-outline btn-sm" onclick="app.triggerImageUpload(${p.id})" style="margin-right: 5px; margin-bottom: 5px;">📷 Edit Pic</button>
+                            ${p.status === 'pending' || p.status === 'unsold' ? `<button class="btn btn-warning btn-sm" onclick="app.openPreAssignModal(${p.id})" style="margin-bottom: 5px;">⭐ Pre-Assign</button>` : ''}
+                        </td>
                     </tr>
                 `).join('');
             },
