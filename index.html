@@ -1531,12 +1531,12 @@
                     <div class="team-grid" id="auctionTeamGrid" style="gap:10px;"></div>
 
                     <!-- Action Buttons: SOLD + MANUAL SELL side by side, always visible -->
-                    <div style="display: flex; gap: 10px; margin-top: 8px; padding-bottom: 4px;">
-                        <button class="btn btn-success" style="flex: 2; padding: 14px; font-size: 1.1rem;"
+                    <div id="containerActionBtns" style="display: flex; gap: 10px; margin-top: 8px; padding-bottom: 4px;">
+                        <button id="btnSold" class="btn btn-success" style="flex: 2; padding: 14px; font-size: 1.1rem;"
                             onclick="app.sellPlayer()">
                             🔨 SOLD
                         </button>
-                        <button class="btn btn-warning admin-only" style="flex: 1; font-weight:bold; padding: 14px; font-size: 0.95rem;"
+                        <button id="btnManualSell" class="btn btn-warning admin-only" style="flex: 1; font-weight:bold; padding: 14px; font-size: 0.95rem;"
                             onclick="app.openManualSellModal()">
                             ⚡ MANUAL SELL
                         </button>
@@ -2166,9 +2166,22 @@
                 document.getElementById('playerActions').style.display = 'none';
                 document.getElementById('playerControlBtns').style.display = 'none';
 
-                // Hide bids
+                // Hide bids and clear state completely
+                this.data.state.currentBid = 0;
+                this.data.state.currentBidder = null;
+                this.data.state.bidHistory = [];
+
                 document.getElementById('currentBidAmt').innerText = "-";
                 document.getElementById('currentBidTeam').innerText = "Spin to select player";
+                document.getElementById('currentBidTeam').style.color = 'var(--text-muted)';
+                document.getElementById('bidHistoryList').innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:10px;">No bids yet</div>';
+
+                // Disable action buttons while waiting for spin
+                if (document.getElementById('btnSold')) document.getElementById('btnSold').disabled = true;
+                if (document.getElementById('btnManualSell')) document.getElementById('btnManualSell').disabled = true;
+
+                // Re-render empty grid immediately
+                this.renderAuctionTeams();
             },
 
             spinForPlayer() {
@@ -2276,6 +2289,10 @@
                 this.updateBidBoard();
                 this.renderAuctionTeams();
                 this.renderPurseTable();
+
+                // Re-enable action buttons
+                if (document.getElementById('btnSold')) document.getElementById('btnSold').disabled = false;
+                if (document.getElementById('btnManualSell')) document.getElementById('btnManualSell').disabled = false;
             },
 
             renderAuctionTeams() {
@@ -2295,11 +2312,12 @@
                     const reserveNeeded = slotsAfterWin * sq.reservePerSlot;
                     const budgetAfterBid = t.remaining - nextBid;
 
-                    const cantAfford    = t.remaining < nextBid;
+                    const cantAfford    = t.remaining < nextBid && this.data.state.currentItem;
                     const squadFull     = t.playerCount >= sq.max;
                     const cantFillSquad = budgetAfterBid < reserveNeeded;
 
-                    const isDisabled = cantAfford || squadFull || cantFillSquad;
+                    // Strictly disable if no active player
+                    const isDisabled = !this.data.state.currentItem || cantAfford || squadFull || cantFillSquad;
 
                     let warningLabel = '';
                     if (squadFull) {
@@ -2360,6 +2378,7 @@
 
             placeBid(teamId) {
                 if (!this.isAdmin) return alert("Admin Lock Active! Unlock to Bid.");
+                if (!this.data.state.currentItem) return alert("Please spin for a player first!");
 
                 const team = this.data.teams.find(t => t.id === teamId);
                 let newBid = this.data.state.currentBid;
@@ -2419,8 +2438,19 @@
                 if (!this.data.state.currentBidder) return alert("No Bidder!");
 
                 const p = this.data.state.currentItem;
+                if (!p) return alert("No player active!");
+                
                 const t = this.data.teams.find(team => team.id === this.data.state.currentBidder);
+                
+                // IMPORTANT: Find player in source-of-truth array (Firebase sync safe)
+                const realP = this.data.players.find(x => x.id === p.id);
+                if (realP) {
+                    realP.status = 'sold';
+                    realP.soldTo = t.name;
+                    realP.soldPrice = this.data.state.currentBid;
+                }
 
+                // Update UI state reference too
                 p.status = 'sold';
                 p.soldTo = t.name;
                 p.soldPrice = this.data.state.currentBid;
@@ -2428,6 +2458,9 @@
                 t.players.push(p.id);
                 t.playerCount++;
                 t.remaining -= p.soldPrice;
+
+                // Sync Player Counts safely
+                this.syncPlayerCounts();
 
                 this.save();
                 this.showSoldOverlay(p.name, t.name, p.soldPrice);
@@ -2489,13 +2522,16 @@
 
             skipPlayer() {
                 if (!this.isAdmin) return alert("Admin Lock Active!");
-                // Move current item to end of array to cycle it
                 const p = this.data.state.currentItem;
+                if (!p) return;
+                
                 this.data.state.lastSkippedId = p.id; // Track them to prevent an immediate re-draw
                 // Remove form index
                 const idx = this.data.players.findIndex(x => x.id === p.id);
-                this.data.players.splice(idx, 1);
-                this.data.players.push(p); // Add to end
+                if (idx > -1) {
+                    const realP = this.data.players.splice(idx, 1)[0];
+                    this.data.players.push(realP); // Add to end
+                }
                 this.save();
                 this.nextPlayer();
             },
@@ -2503,7 +2539,15 @@
             unsoldPlayer() {
                 if (!this.isAdmin) return alert("Admin Lock Active!");
                 const p = this.data.state.currentItem;
-                p.status = 'unsold';
+                if (!p) return;
+                
+                // IMPORTANT: Find player in source-of-truth array (Firebase sync safe)
+                const realP = this.data.players.find(x => x.id === p.id);
+                if (realP) {
+                    realP.status = 'unsold';
+                }
+                p.status = 'unsold'; // update state ref too
+                
                 this.save();
                 this.nextPlayer();
             },
@@ -2667,6 +2711,15 @@
                 document.getElementById('editSaleModal').style.display = 'flex';
             },
 
+            // Syncs all team playerCounts from actual soldTo data — prevents drift
+            syncPlayerCounts() {
+                this.data.teams.forEach(t => {
+                    const sold = this.data.players.filter(p => p.soldTo === t.name && p.status === 'sold');
+                    t.playerCount = sold.length;
+                    t.players = sold.map(p => p.id);
+                });
+            },
+
             confirmEditSale() {
                 if (!this.isAdmin) return alert("Admin Lock Active!");
                 const teamId = document.getElementById('editSaleTeam').value;
@@ -2680,27 +2733,27 @@
                 const newTeam = this.data.teams.find(t => t.id.toString() === teamId.toString());
                 const oldTeam = this.data.teams.find(t => t.name === p.soldTo);
 
-                // Reverse old sale from old team
+                // Reverse budget from old team
                 if (oldTeam) {
                     oldTeam.remaining += (p.soldPrice || 0);
-                    oldTeam.playerCount = Math.max(0, (oldTeam.playerCount || 1) - 1);
-                    oldTeam.players = (oldTeam.players || []).filter(pid => pid !== p.id);
                 }
 
                 // Apply new sale to new team
                 p.soldTo = newTeam.name;
                 p.soldPrice = newPrice;
+                p.status = 'sold';
                 newTeam.remaining -= newPrice;
-                newTeam.playerCount = (newTeam.playerCount || 0) + 1;
-                if (!newTeam.players) newTeam.players = [];
-                if (!newTeam.players.includes(p.id)) newTeam.players.push(p.id);
+
+                // Recompute all counts from source of truth
+                this.syncPlayerCounts();
 
                 this.save();
                 document.getElementById('editSaleModal').style.display = 'none';
                 this.renderPlayerTable();
                 this.renderTicker();
-                if (document.getElementById('teams').classList.contains('active')) this.renderTeamsTab();
-                if (document.getElementById('dashboard').classList.contains('active')) this.renderDashboard();
+                // Always refresh teams + dashboard (not just if tab is active)
+                this.renderTeamsTab();
+                this.renderDashboard();
                 if (document.getElementById('auction').classList.contains('active')) this.renderAuctionTeams();
                 alert(`✅ Sale updated: ${p.name} → ${newTeam.name} for ${this.formatCr(newPrice)}`);
             },
@@ -2811,16 +2864,20 @@
             renderTeamsTab() {
                 const container = document.getElementById('teamsFullGrid');
                 container.innerHTML = this.data.teams.map(t => {
-                    const teamPlayers = this.data.players.filter(p => p.soldTo === t.name);
-
+                    const sq = this.data.settings.squadRules || { min: 11, max: 15, reservePerSlot: 100 };
+                    const teamPlayers = this.data.players.filter(p => p.soldTo === t.name && p.status === 'sold');
+                    const pendingSlots = Math.max(0, sq.min - teamPlayers.length);
                     return `
                         <div class="team-detail-card" style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                             <div class="team-detail-header" style="background: linear-gradient(90deg, rgba(99,102,241,0.1), transparent); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 25px;">
                                 <div style="display:flex; align-items:center; gap:15px;">
                                     ${t.logo ? `<img src="${t.logo}" style="width:60px; height:60px; object-fit:contain; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">` : '<span style="font-size:3rem">🏏</span>'}
                                     <div>
-                                        <h3 style="font-family:'Chakra Petch', sans-serif; font-size: 1.8rem; text-transform:uppercase; margin-bottom:5px; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${t.name}</h3>
-                                        <div style="font-size: 0.9rem; color: var(--accent); letter-spacing:1px; font-weight:bold;">${teamPlayers.length} / ${t.playerCount} SQUAD</div>
+                        <h3 style="font-family:'Chakra Petch', sans-serif; font-size: 1.8rem; text-transform:uppercase; margin-bottom:5px; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${t.name}</h3>
+                                        <div style="display:flex; gap:12px; align-items:center;">
+                                            <div style="font-size: 0.9rem; color: var(--accent); letter-spacing:1px; font-weight:bold;">${teamPlayers.length} SIGNED</div>
+                                            ${pendingSlots > 0 ? `<div style="font-size: 0.85rem; color:var(--warning); font-weight:bold; background:rgba(245,158,11,0.1); padding:2px 10px; border-radius:20px; border:1px solid rgba(245,158,11,0.3);">⏳ ${pendingSlots} SLOTS PENDING</div>` : `<div style="font-size: 0.85rem; color:var(--success); font-weight:bold; padding:2px 10px;">✅ Min Squad Met</div>`}
+                                        </div>
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
@@ -2857,34 +2914,44 @@
                 document.getElementById('dashUnsold').innerText = this.data.players.filter(p => p.status === 'unsold').length;
 
                 const list = document.getElementById('dashTeamList');
-                list.innerHTML = this.data.teams.map(t => `
-                    <div class="card dash-team-card" style="background: linear-gradient(160deg, #1e293b, #020617); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 32px rgba(0,0,0,0.3); transform-style: preserve-3d; transition: transform 0.3s;">
+                list.innerHTML = this.data.teams.map(t => {
+                    const sq = this.data.settings.squadRules || { min: 11, max: 15, reservePerSlot: 100 };
+                    const actualCount = this.data.players.filter(p => p.soldTo === t.name && p.status === 'sold').length;
+                    const pendingSlots = Math.max(0, sq.min - actualCount);
+                    return `
+                    <div class="card dash-team-card" style="background: linear-gradient(160deg, #1e293b, #020617); border: 1px solid ${pendingSlots > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)'}; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
                         ${t.logo ? `<img src="${t.logo}" class="dash-team-logo" alt="logo" style="width:80px; height:80px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));">` : '<div class="dash-team-logo" style="display:flex;align-items:center;justify-content:center;font-size:3rem;background:rgba(255,255,255,0.05);border-radius:50%;width:80px;height:80px;margin:0 auto 15px;">🏏</div>'}
                         
-                        <h4 class="dash-team-name" style="font-family:'Chakra Petch', sans-serif; font-size:1.5rem; text-transform:uppercase; letter-spacing:1px; margin: 15px 0;">${t.name}</h4>
+                        <h4 class="dash-team-name" style="font-family:'Chakra Petch', sans-serif; font-size:1.5rem; text-transform:uppercase; letter-spacing:1px; margin: 10px 0 5px;">${t.name}</h4>
                         
-                        <div class="progress-bar" style="width:100%; height:8px; background:rgba(255,255,255,0.1); margin-bottom:20px; border-radius:4px; overflow:hidden;">
+                        ${pendingSlots > 0
+                            ? `<div style="font-size:0.8rem; color:var(--warning); background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:3px 12px; display:inline-block; margin-bottom:10px;">⏳ ${pendingSlots} Pending Slot${pendingSlots > 1 ? 's' : ''}</div>`
+                            : `<div style="font-size:0.8rem; color:var(--success); background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:20px; padding:3px 12px; display:inline-block; margin-bottom:10px;">✅ Min Squad Met</div>`
+                        }
+
+                        <div class="progress-bar" style="width:100%; height:8px; background:rgba(255,255,255,0.1); margin-bottom:15px; border-radius:4px; overflow:hidden;">
                             <div class="progress-fill" style="width:${((t.budget - t.remaining) / t.budget) * 100}%; height:100%; background: linear-gradient(90deg, var(--primary), var(--accent)); box-shadow:0 0 10px var(--primary-glow);"></div>
                         </div>
                         
                         <div class="dash-stats-grid" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px 15px; border-radius: 12px; gap: 10px; display:grid; grid-template-columns:1fr 1px 1fr 1px 1fr;">
                             <div style="text-align:center;">
                                 <div class="dash-stat-item" style="font-size: 0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; color:var(--text-muted);">Pending Budget</div>
-                                <div class="dash-stat-val" style="font-family:'Chakra Petch', sans-serif; font-size: 1.3rem; color:var(--success); text-shadow:0 0 10px rgba(16,185,129,0.3);">${this.formatCr(t.remaining)}</div>
+                                <div class="dash-stat-val" style="font-family:'Chakra Petch', sans-serif; font-size: 1.3rem; color:var(--success);">${this.formatCr(t.remaining)}</div>
                             </div>
                             <div style="background:rgba(255,255,255,0.1);"></div>
                             <div style="text-align:center;">
                                 <div class="dash-stat-item" style="font-size: 0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; color:var(--text-muted);">Players Bought</div>
-                                <div class="dash-stat-val" style="font-family:'Chakra Petch', sans-serif; font-size: 1.3rem; color:#f8fafc;">${t.playerCount}</div>
+                                <div class="dash-stat-val" style="font-family:'Chakra Petch', sans-serif; font-size: 1.3rem; color:#f8fafc;">${actualCount}</div>
                             </div>
                             <div style="background:rgba(255,255,255,0.1);"></div>
                             <div style="text-align:center;">
-                                <div class="dash-stat-item" style="font-size: 0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; color:var(--text-muted);">Spent</div>
-                                <div class="dash-stat-val" style="font-family:'Chakra Petch', sans-serif; font-size: 1.3rem; color:var(--warning);">${this.formatCr(t.budget - t.remaining)}</div>
+                                <div class="dash-stat-item" style="font-size: 0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; color:${pendingSlots > 0 ? 'var(--warning)' : 'var(--text-muted)'};">Pending Slots</div>
+                                <div class="dash-stat-val" style="font-family:'Chakra Petch', sans-serif; font-size: 1.3rem; color:${pendingSlots > 0 ? 'var(--warning)' : 'var(--success)'}; font-weight:900;">${pendingSlots}</div>
                             </div>
                         </div>
                     </div>
-                 `).join('');
+                    `;
+                }).join('');
             },
 
             renderPlayerTable() {
