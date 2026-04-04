@@ -8,9 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Bangers&family=Chakra+Petch:wght@400;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <!-- Firebase SDK -->
@@ -69,7 +67,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+            font-family: 'Outfit', system-ui, sans-serif;
         }
 
         body {
@@ -87,7 +85,7 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
         }
 
         /* --- Animations --- */
@@ -813,7 +811,7 @@
 
         .team-bid-btn {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 2px solid transparent;
             border-radius: 12px;
             padding: 15px;
             cursor: pointer;
@@ -824,13 +822,13 @@
         }
 
         .team-bid-btn .btn-text-main {
-            color: #0f172a;
-            -webkit-text-fill-color: #0f172a;
+            color: #000000;
+            -webkit-text-fill-color: #000000;
         }
         
         .team-bid-btn .btn-text-muted {
-            color: #64748b;
-            -webkit-text-fill-color: #64748b;
+            color: #333333;
+            -webkit-text-fill-color: #333333;
         }
 
         .team-bid-btn:hover:not(:disabled) {
@@ -840,21 +838,23 @@
         }
 
         .team-bid-btn:disabled {
-            opacity: 0.9;
-            background: #f8fafc;
-            border-color: #e2e8f0;
+            opacity: 1; /* Eliminates muddy transparent gray */
+            background: #ffffff;
+            border-color: #cbd5e1;
             cursor: not-allowed;
             box-shadow: none;
         }
         
-        .team-bid-btn:disabled .btn-text-main {
-            color: #94a3b8 !important;
-            -webkit-text-fill-color: #94a3b8 !important;
+        /* Force override of Chrome/Windows 'GrayText' system color for disabled buttons */
+        .team-bid-btn:disabled * {
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
         }
         
         .team-bid-btn:disabled .btn-text-muted {
-            color: #cbd5e1 !important;
-            -webkit-text-fill-color: #cbd5e1 !important;
+            color: #333333 !important;
+            -webkit-text-fill-color: #333333 !important;
+            opacity: 1;
         }
 
         .team-bid-btn.active-bidder {
