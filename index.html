@@ -812,32 +812,66 @@
         }
 
         .team-bid-btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 12px;
             padding: 15px;
             cursor: pointer;
             text-align: left;
             position: relative;
             transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .team-bid-btn .btn-text-main {
+            color: #0f172a;
+            -webkit-text-fill-color: #0f172a;
+        }
+        
+        .team-bid-btn .btn-text-muted {
+            color: #64748b;
+            -webkit-text-fill-color: #64748b;
         }
 
         .team-bid-btn:hover:not(:disabled) {
-            border-color: var(--primary);
+            border-color: #cbd5e1;
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
 
         .team-bid-btn:disabled {
-            opacity: 0.8;
-            background: rgba(0,0,0,0.25);
-            border-color: rgba(255,255,255,0.05);
+            opacity: 0.9;
+            background: #f8fafc;
+            border-color: #e2e8f0;
             cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .team-bid-btn:disabled .btn-text-main {
+            color: #94a3b8 !important;
+            -webkit-text-fill-color: #94a3b8 !important;
+        }
+        
+        .team-bid-btn:disabled .btn-text-muted {
+            color: #cbd5e1 !important;
+            -webkit-text-fill-color: #cbd5e1 !important;
         }
 
         .team-bid-btn.active-bidder {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white !important;
+            background: linear-gradient(135deg, #0ea5e9, #10b981);
+            border-color: transparent;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .team-bid-btn.active-bidder .btn-text-main {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+        
+        .team-bid-btn.active-bidder .btn-text-muted {
+            color: #e0f2fe !important;
+            -webkit-text-fill-color: #e0f2fe !important;
         }
 
         .current-bid-card {
@@ -2335,9 +2369,9 @@
 
                     return `
                         <button class="team-bid-btn ${isLeader ? 'active-bidder' : ''}" onclick="app.placeBid(${t.id})" ${isDisabled ? 'disabled' : ''} style="${cantFillSquad && !cantAfford && !squadFull ? 'border-color:var(--warning);' : ''}">
-                            <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px; color:#ffffff;">${t.name}</div>
-                            <div style="font-size:0.82rem; margin-top:3px; color:#cbd5e1;">Rem: ${this.formatCr(t.remaining)}</div>
-                            <div style="font-size:0.82rem; color:#cbd5e1;">Squad: ${actualCount}/${sq.max}</div>
+                            <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px;" class="btn-text-main">${t.name}</div>
+                            <div style="font-size:0.82rem; margin-top:3px;" class="btn-text-muted">Rem: ${this.formatCr(t.remaining)}</div>
+                            <div style="font-size:0.82rem;" class="btn-text-muted">Squad: ${actualCount}/${sq.max}</div>
                             ${warningLabel}
                         </button>
                     `;
