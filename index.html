@@ -810,7 +810,7 @@
         }
 
         .team-bid-btn {
-            background: #ffffff;
+            background: #e0f2fe;
             border: 2px solid transparent;
             border-radius: 12px;
             padding: 15px;
@@ -839,8 +839,8 @@
 
         .team-bid-btn:disabled {
             opacity: 1; /* Eliminates muddy transparent gray */
-            background: #ffffff;
-            border-color: #cbd5e1;
+            background: #e0f2fe;
+            border-color: #bae6fd;
             cursor: not-allowed;
             box-shadow: none;
         }
@@ -855,6 +855,19 @@
             color: #333333 !important;
             -webkit-text-fill-color: #333333 !important;
             opacity: 1;
+        }
+        
+        /* Max limit reached card */
+        .team-bid-btn.max-reached,
+        .team-bid-btn.max-reached:disabled {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            border-color: transparent !important;
+            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3) !important;
+        }
+        
+        .team-bid-btn.max-reached * {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
         }
 
         .team-bid-btn.active-bidder {
@@ -2360,7 +2373,7 @@
 
                     let warningLabel = '';
                     if (squadFull) {
-                        warningLabel = `<div style="font-size:0.72rem; color:var(--danger); margin-top:2px;">Max squad reached</div>`;
+                        warningLabel = `<div style="font-size:0.75rem; font-weight: 700; color:#ffffff; margin-top:2px;">Max squad reached</div>`;
                     } else if (cantFillSquad && !cantAfford) {
                         warningLabel = `<div style="font-size:0.72rem; color:var(--warning); margin-top:2px;">⚠️ Reserve needed: ${this.formatCr(reserveNeeded)}</div>`;
                     } else if (cantAfford) {
@@ -2368,7 +2381,7 @@
                     }
 
                     return `
-                        <button class="team-bid-btn ${isLeader ? 'active-bidder' : ''}" onclick="app.placeBid(${t.id})" ${isDisabled ? 'disabled' : ''} style="${cantFillSquad && !cantAfford && !squadFull ? 'border-color:var(--warning);' : ''}">
+                        <button class="team-bid-btn ${isLeader ? 'active-bidder' : ''} ${squadFull ? 'max-reached' : ''}" onclick="app.placeBid(${t.id})" ${isDisabled ? 'disabled' : ''} style="${cantFillSquad && !cantAfford && !squadFull ? 'border-color:var(--warning);' : ''}">
                             <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px;" class="btn-text-main">${t.name}</div>
                             <div style="font-size:0.82rem; margin-top:3px;" class="btn-text-muted">Rem: ${this.formatCr(t.remaining)}</div>
                             <div style="font-size:0.82rem;" class="btn-text-muted">Squad: ${actualCount}/${sq.max}</div>
