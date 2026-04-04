@@ -828,7 +828,9 @@
         }
 
         .team-bid-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.8;
+            background: rgba(0,0,0,0.25);
+            border-color: rgba(255,255,255,0.05);
             cursor: not-allowed;
         }
 
@@ -2319,8 +2321,8 @@
                     const squadFull     = actualCount >= sq.max;
                     const cantFillSquad = budgetAfterBid < reserveNeeded;
 
-                    // Strictly disable if no active player
-                    const isDisabled = !this.data.state.currentItem || cantAfford || squadFull || cantFillSquad;
+                    // Strictly disable if no active player or already the highest bidder
+                    const isDisabled = !this.data.state.currentItem || cantAfford || squadFull || cantFillSquad || isLeader;
 
                     let warningLabel = '';
                     if (squadFull) {
@@ -2333,9 +2335,9 @@
 
                     return `
                         <button class="team-bid-btn ${isLeader ? 'active-bidder' : ''}" onclick="app.placeBid(${t.id})" ${isDisabled ? 'disabled' : ''} style="${cantFillSquad && !cantAfford && !squadFull ? 'border-color:var(--warning);' : ''}">
-                            <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px;">${t.name}</div>
-                            <div style="font-size:0.82rem; margin-top:3px; opacity:0.9;">Rem: ${this.formatCr(t.remaining)}</div>
-                            <div style="font-size:0.82rem; opacity:0.8;">Squad: ${actualCount}/${sq.max}</div>
+                            <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px; color:#ffffff;">${t.name}</div>
+                            <div style="font-size:0.82rem; margin-top:3px; color:#cbd5e1;">Rem: ${this.formatCr(t.remaining)}</div>
+                            <div style="font-size:0.82rem; color:#cbd5e1;">Squad: ${actualCount}/${sq.max}</div>
                             ${warningLabel}
                         </button>
                     `;
