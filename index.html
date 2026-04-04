@@ -2303,17 +2303,20 @@
                 grid.innerHTML = this.data.teams.map(t => {
                     const isLeader = this.data.state.currentBidder === t.id;
 
+                    // compute actual count live to prevent display drift
+                    const actualCount = this.data.players.filter(p => p.soldTo === t.name && p.status === 'sold').length;
+
                     // --- Squad fill reserve check ---
                     // After winning this bid, how many more players do they still need?
                     const nextBid = (this.data.state.currentBidder)
                         ? currentBid + this.getDynamicIncrement()
                         : currentBid;
-                    const slotsAfterWin = Math.max(0, sq.min - (t.playerCount + 1));
+                    const slotsAfterWin = Math.max(0, sq.min - (actualCount + 1));
                     const reserveNeeded = slotsAfterWin * sq.reservePerSlot;
                     const budgetAfterBid = t.remaining - nextBid;
 
                     const cantAfford    = t.remaining < nextBid && this.data.state.currentItem;
-                    const squadFull     = t.playerCount >= sq.max;
+                    const squadFull     = actualCount >= sq.max;
                     const cantFillSquad = budgetAfterBid < reserveNeeded;
 
                     // Strictly disable if no active player
@@ -2332,7 +2335,7 @@
                         <button class="team-bid-btn ${isLeader ? 'active-bidder' : ''}" onclick="app.placeBid(${t.id})" ${isDisabled ? 'disabled' : ''} style="${cantFillSquad && !cantAfford && !squadFull ? 'border-color:var(--warning);' : ''}">
                             <div style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px;">${t.name}</div>
                             <div style="font-size:0.82rem; margin-top:3px; opacity:0.9;">Rem: ${this.formatCr(t.remaining)}</div>
-                            <div style="font-size:0.82rem; opacity:0.8;">Squad: ${t.playerCount}/${sq.max}</div>
+                            <div style="font-size:0.82rem; opacity:0.8;">Squad: ${actualCount}/${sq.max}</div>
                             ${warningLabel}
                         </button>
                     `;
