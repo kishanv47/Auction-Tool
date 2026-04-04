@@ -810,81 +810,89 @@
         }
 
         .team-bid-btn {
-            background: #e0f2fe;
-            border: 2px solid transparent;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 3px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 15px;
             cursor: pointer;
             text-align: left;
             position: relative;
             transition: all 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(8px);
         }
 
         .team-bid-btn .btn-text-main {
-            color: #000000;
-            -webkit-text-fill-color: #000000;
+            color: #f8fafc;
+            -webkit-text-fill-color: #f8fafc;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
         
         .team-bid-btn .btn-text-muted {
-            color: #333333;
-            -webkit-text-fill-color: #333333;
+            color: #cbd5e1;
+            -webkit-text-fill-color: #cbd5e1;
         }
 
         .team-bid-btn:hover:not(:disabled) {
-            border-color: #cbd5e1;
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(255, 255, 255, 0.15);
+            border-top-color: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
 
         .team-bid-btn:disabled {
-            opacity: 1; /* Eliminates muddy transparent gray */
-            background: #e0f2fe;
-            border-color: #bae6fd;
+            opacity: 0.85; 
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255, 255, 255, 0.02);
+            border-top-color: rgba(255, 255, 255, 0.05);
             cursor: not-allowed;
             box-shadow: none;
         }
         
-        /* Force override of Chrome/Windows 'GrayText' system color for disabled buttons */
         .team-bid-btn:disabled * {
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
+            color: #e2e8f0 !important;
+            -webkit-text-fill-color: #e2e8f0 !important;
         }
         
         .team-bid-btn:disabled .btn-text-muted {
-            color: #333333 !important;
-            -webkit-text-fill-color: #333333 !important;
+            color: #94a3b8 !important;
+            -webkit-text-fill-color: #94a3b8 !important;
             opacity: 1;
         }
         
         /* Max limit reached card */
         .team-bid-btn.max-reached,
         .team-bid-btn.max-reached:disabled {
-            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
-            border-color: transparent !important;
-            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3) !important;
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid rgba(239, 68, 68, 0.15) !important;
+            border-top: 3px solid #ef4444 !important;
+            box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.05);
+            opacity: 0.75;
         }
         
         .team-bid-btn.max-reached * {
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
+            color: #cbd5e1 !important;
+            -webkit-text-fill-color: #cbd5e1 !important;
         }
 
+        /* Active Bidder - Glow and Professional popping skyblue/cyan */
         .team-bid-btn.active-bidder {
-            background: linear-gradient(135deg, #0ea5e9, #10b981);
-            border-color: transparent;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            background: radial-gradient(150% 150% at 50% 0%, rgba(14, 165, 233, 0.25) 0%, rgba(30, 41, 59, 0.8) 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            border-top: 3px solid #0ea5e9;
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.15), inset 0 1px 1px rgba(255,255,255,0.1);
             transform: translateY(-2px);
         }
         
         .team-bid-btn.active-bidder .btn-text-main {
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
+            text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
         }
         
         .team-bid-btn.active-bidder .btn-text-muted {
-            color: #e0f2fe !important;
-            -webkit-text-fill-color: #e0f2fe !important;
+            color: #bae6fd !important;
+            -webkit-text-fill-color: #bae6fd !important;
         }
 
         .current-bid-card {
@@ -2373,7 +2381,7 @@
 
                     let warningLabel = '';
                     if (squadFull) {
-                        warningLabel = `<div style="font-size:0.75rem; font-weight: 700; color:#ffffff; margin-top:2px;">Max squad reached</div>`;
+                        warningLabel = `<div style="font-size:0.75rem; font-weight: 700; color:var(--danger); margin-top:2px;">Max squad reached</div>`;
                     } else if (cantFillSquad && !cantAfford) {
                         warningLabel = `<div style="font-size:0.72rem; color:var(--warning); margin-top:2px;">⚠️ Reserve needed: ${this.formatCr(reserveNeeded)}</div>`;
                     } else if (cantAfford) {
