@@ -75,8 +75,13 @@
         body {
             background-color: var(--bg-dark);
             background-image:
-                radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.08), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.08), transparent 25%);
+                radial-gradient(circle at top right, rgba(79, 70, 229, 0.4), transparent 40%),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.95)),
+                url('https://images.unsplash.com/photo-1540747915431-7e8c0fa312ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+            background-size: cover, cover, cover;
+            background-position: center, center, center;
+            background-attachment: fixed, fixed, fixed;
+            background-blend-mode: normal, normal, normal;
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
@@ -1635,6 +1640,21 @@
         </div>
     </div>
 
+    <!-- ADMIN PIN OVERLAY -->
+    <div id="adminPinModal" class="modal-overlay">
+        <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; color: var(--text-main); text-align: left; max-width: 400px; padding: 30px;">
+            <h2 style="font-size: 1.8rem; margin-bottom: 20px; font-family: 'Chakra Petch', sans-serif;"><span style="color:var(--warning);">🔒</span> Admin Unlock</h2>
+            <div class="form-group">
+                <label class="form-label">Enter Security PIN</label>
+                <input type="password" id="adminPinInput" class="form-control" placeholder="****" style="letter-spacing: 5px; font-size: 1.5rem; text-align: center;" onkeypress="if(event.key === 'Enter') app.submitAdminPin()">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn btn-warning btn-block" style="font-weight:bold;" onclick="app.submitAdminPin()">Unlock System</button>
+                <button class="btn btn-outline btn-block" onclick="document.getElementById('adminPinModal').style.display='none'">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SOLD OVERLAY -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-content">
@@ -1771,14 +1791,22 @@
                     this.isAdmin = false;
                     this.checkAdminUI();
                 } else {
-                    // Unlock it
-                    const pin = prompt("Enter Admin PIN to Unlock:");
-                    if (pin === "0000") {
-                        this.isAdmin = true;
-                        this.checkAdminUI();
-                    } else if (pin !== null) {
-                        alert("Wrong PIN!");
-                    }
+                    // Show Custom Modal for Masked Password
+                    document.getElementById('adminPinInput').value = '';
+                    document.getElementById('adminPinModal').style.display = 'flex';
+                    setTimeout(() => document.getElementById('adminPinInput').focus(), 100);
+                }
+            },
+
+            submitAdminPin() {
+                const pin = document.getElementById('adminPinInput').value;
+                if (pin === "1111") {
+                    this.isAdmin = true;
+                    this.checkAdminUI();
+                    document.getElementById('adminPinModal').style.display = 'none';
+                } else {
+                    alert("⚠️ Access Denied! Incorrect PIN.");
+                    document.getElementById('adminPinInput').value = '';
                 }
             },
 
@@ -2118,8 +2146,18 @@
 
             finishSpin(pool) {
                 // Actual Random Selection
-                const randomIndex = Math.floor(Math.random() * pool.length);
-                const player = pool[randomIndex];
+                let randomIndex = Math.floor(Math.random() * pool.length);
+                let player = pool[randomIndex];
+
+                // Prevent consecutive repeats: if we randomly hit the exact player we just skipped, 
+                // and there are other players left, shift the index to the next player.
+                if (pool.length > 1 && this.data.state.lastSkippedId === player.id) {
+                    randomIndex = (randomIndex + 1) % pool.length;
+                    player = pool[randomIndex];
+                }
+
+                // Clear the tracking so they can be drawn later normally
+                this.data.state.lastSkippedId = null;
 
                 this.data.state.currentItem = player;
                 this.data.state.currentBid = player.basePrice;
@@ -2353,6 +2391,7 @@
                 if (!this.isAdmin) return alert("Admin Lock Active!");
                 // Move current item to end of array to cycle it
                 const p = this.data.state.currentItem;
+                this.data.state.lastSkippedId = p.id; // Track them to prevent an immediate re-draw
                 // Remove form index
                 const idx = this.data.players.findIndex(x => x.id === p.id);
                 this.data.players.splice(idx, 1);
