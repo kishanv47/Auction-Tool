@@ -823,6 +823,7 @@ const DEFAULT_DATA = {
     ]},
     squadRules: { min: 11, max: 15, reservePerSlot: 100 },
     teamLoginEnabled: false,
+    telegram: { enabled: false, token: '', chatId: '' },
   },
   state: {
     currentSetIndex: 1, currentItem: null, currentBid: 0, currentBidder: null,
@@ -875,6 +876,34 @@ function normalizePlan(p) {
   }
   out.updated = (p && p.updated) || 0;
   return out;
+}
+
+function dataURItoBlob(dataURI) {
+  const parts = dataURI.split(','); const meta = parts[0] || '';
+  const mime = (meta.match(/data:(.*?);base64/) || [])[1] || 'image/jpeg';
+  const bin = atob(parts[1] || ''); const len = bin.length; const arr = new Uint8Array(len);
+  for (let i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+// Send to Telegram from the browser. Uses no-preflight request shapes so it isn't blocked by CORS.
+function tgSend(tg, opts) {
+  const base = 'https://api.telegram.org/bot' + tg.token + '/';
+  const photo = opts.photo, caption = opts.caption;
+  const isData = typeof photo === 'string' && photo.indexOf('data:') === 0;
+  const isUrl = typeof photo === 'string' && /^https?:\/\//i.test(photo);
+  if (isData) {
+    const fd = new FormData();
+    fd.append('chat_id', tg.chatId); fd.append('caption', caption); fd.append('parse_mode', 'HTML');
+    fd.append('photo', dataURItoBlob(photo), 'player.jpg');
+    return fetch(base + 'sendPhoto', { method: 'POST', body: fd }).then(r => r.json());
+  }
+  const params = new URLSearchParams();
+  params.set('chat_id', tg.chatId); params.set('parse_mode', 'HTML');
+  if (isUrl) { params.set('photo', photo); params.set('caption', caption);
+    return fetch(base + 'sendPhoto', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() }).then(r => r.json());
+  }
+  params.set('text', caption);
+  return fetch(base + 'sendMessage', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() }).then(r => r.json());
 }
 
 /* ============================ SOUND ENGINE ============================ */
@@ -1051,6 +1080,22 @@ function SetupView({ data, mutate, toast, fileImportExcel, exportExcel, exportJS
   const [pPrice, setPPrice] = useState(''); const [pImg, setPImg] = useState('');
   const excelRef = useRef(); const jsonRef = useRef();
 
+  const setTg = (key, val) => mutate(d => {
+    if (!d.settings.telegram) d.settings.telegram = { enabled: false, token: '', chatId: '' };
+    d.settings.telegram[key] = val;
+  });
+  const testTg = async () => {
+    const tg = data.settings.telegram || {};
+    if (!tg.token || !tg.chatId) return toast('Enter the bot token and chat ID first', 'warn');
+    try {
+      const res = await tgSend(tg, { photo: '', caption: '✅ <b>Auction Arena</b> connected — SOLD updates will appear here.' });
+      if (res && res.ok) toast('Test sent — check your Telegram group', 'ok');
+      else toast('Telegram: ' + ((res && res.description) || 'failed — check token & chat ID'), 'err');
+    } catch (e) {
+      toast("Sent, but couldn't read Telegram's reply — check your group to confirm", 'info');
+    }
+  };
+
   const setSetting = (path, value) => mutate(d => {
     let o = d.settings; const keys = path.split('.');
     for (let i = 0; i < keys.length - 1; i++) o = o[keys[i]];
@@ -1158,6 +1203,22 @@ function SetupView({ data, mutate, toast, fileImportExcel, exportExcel, exportJS
             <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Give each team a private planning room on their own device</span>
           </label>
           <p className="hint">When on, teams join with their name + a 4-digit code (shown in the Teams panel; tap a code to regenerate). Their room shows the players left, a target-budget calculator, and every team's live purse — but they can't bid. You stay the only auctioneer. Codes are a friendly gate for a live room, not bank-grade security.</p>
+        </div>
+
+        {/* TELEGRAM */}
+        <div className="panel panel-pad">
+          <div className="panel-head"><span className="eyebrow">Notify</span><h2>Telegram Updates</h2></div>
+          <label className="switch" style={{ marginBottom: 12 }}>
+            <input type="checkbox" checked={!!(s.telegram && s.telegram.enabled)} onChange={e => setTg('enabled', e.target.checked)} />
+            <span className="track" />
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Post a SOLD card (player photo + sold-to details) to your Telegram group on every sale</span>
+          </label>
+          <label className="field"><label>Bot token</label>
+            <input className="input" type="text" placeholder="123456:ABC-DEF…" value={(s.telegram && s.telegram.token) || ''} onChange={e => setTg('token', e.target.value.trim())} /></label>
+          <label className="field"><label>Group chat ID</label>
+            <input className="input" type="text" placeholder="-1001234567890" value={(s.telegram && s.telegram.chatId) || ''} onChange={e => setTg('chatId', e.target.value.trim())} /></label>
+          <button className="btn btn-ghost btn-sm" onClick={testTg}>Send test message</button>
+          <p className="hint">Create a bot with <b>@BotFather</b> → copy its token. Add the bot to your group. To get the group chat ID, add <b>@RawDataBot</b> to the group (it prints the chat id, a negative number), then remove it. Only the auctioneer's device sends, so there are no duplicates. The token sits inside this page — only share the auction link with people you trust.</p>
         </div>
       </div>
 
@@ -1374,6 +1435,7 @@ function AuctionView({ data, mutate, isAdmin, toast, openManualSell, openEditUnu
 
   const finalizeSale = (p, team, price) => {
     Sound.sold();
+    const remainingAfter = (team.remaining || 0) - price;
     mutate(d => {
       const rp = d.players.find(x => x.id === p.id);
       if (rp) { rp.status = 'sold'; rp.soldTo = team.name; rp.soldPrice = price; }
@@ -1384,6 +1446,12 @@ function AuctionView({ data, mutate, isAdmin, toast, openManualSell, openEditUnu
       const { pool, nextSetIndex } = computePending(d);
       d.state.currentSetIndex = nextSetIndex; d.state.pendingPool = pool;
     });
+    // Push a SOLD card to Telegram (admin device only — viewers/teams never sell)
+    const tg = data.settings.telegram;
+    if (tg && tg.enabled && tg.token && tg.chatId) {
+      const cap = `🔨 <b>SOLD</b>\n\n🏏 <b>${p.name}</b> · ${p.role}\n💰 <b>${formatCr(price)}</b>\n🛡 ${team.name}\n\n${team.name} purse left: <b>${formatCr(remainingAfter)}</b>`;
+      tgSend(tg, { photo: p.img, caption: cap }).catch(e => console.error('telegram', e));
+    }
   };
 
   const skip = () => {
