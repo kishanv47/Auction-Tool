@@ -292,6 +292,50 @@
         .slot-foot.sec { color: var(--money); } .slot-foot.lost { color: var(--danger); }
         .slot-foot b { color: #fff; font-weight: 600; }
 
+        /* Team bidding panel */
+        /* Top live-bid bar (team page) */
+        .bidbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+            border: 1px solid color-mix(in srgb, var(--team, var(--gold)) 45%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--team, var(--gold)) 18%, transparent); }
+        .bidbar-info { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 220px; }
+        .bidbar-img, .bidbar-ph { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: rgba(255,255,255,0.05); }
+        .bidbar-ph { display: grid; place-items: center; font-family: var(--display); font-size: 2rem; color: var(--faint); }
+        .bidbar-name { font-family: var(--head); font-weight: 700; font-size: 1.2rem; }
+        .bidbar-role { font-size: 0.72rem; color: var(--faint); font-weight: 600; }
+        .bidbar-cur { font-size: 0.9rem; color: var(--muted); margin-top: 2px; }
+        .bidbar-cur b { font-family: var(--mono); color: #fff; }
+        .bidbar-action { width: 220px; flex-shrink: 0; }
+        .bidbar-wait { opacity: 0.85; border-style: dashed; }
+        @media (max-width: 560px){ .bidbar-action { width: 100%; } }
+
+        .teambid { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+        .btn-bid { width: 100%; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+            border: none; border-radius: var(--r-md); cursor: pointer; color: #fff; font-family: var(--head); letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--team, var(--gold)), color-mix(in srgb, var(--team, var(--gold)) 60%, #000));
+            box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--team, var(--gold)) 70%, transparent); transition: transform 0.1s, box-shadow 0.2s; }
+        .btn-bid:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 18px 38px -12px color-mix(in srgb, var(--team, var(--gold)) 85%, transparent); }
+        .btn-bid:active:not(:disabled) { transform: translateY(1px); }
+        .btn-bid:disabled { opacity: 0.45; cursor: not-allowed; background: rgba(255,255,255,0.07); color: var(--muted); box-shadow: none; }
+        .btn-bid .bid-lbl { font-size: 0.85rem; font-weight: 700; }
+        .btn-bid .bid-amt { font-family: var(--display); font-size: 1.9rem; line-height: 1; }
+        .teambid-lead { padding: 16px; border-radius: var(--r-md); text-align: center; font-weight: 700; font-family: var(--head);
+            color: var(--money); background: var(--money-soft); border: 1px solid rgba(52,211,153,0.3); }
+
+        /* All squads (team view) */
+        .squad-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+        .squad-card { border-radius: var(--r-md); border: 1px solid var(--line); border-top: 3px solid var(--team, var(--gold)); background: rgba(5,8,18,0.45); padding: 12px 14px; }
+        .squad-card.me { box-shadow: 0 0 0 1px var(--team, var(--gold)); }
+        .squad-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+        .squad-name { font-family: var(--head); font-weight: 700; font-size: 1rem; }
+        .squad-purse { font-family: var(--mono); font-size: 0.82rem; color: var(--money); }
+        .squad-sub { font-size: 0.68rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--faint); font-weight: 700; margin: 4px 0 10px; }
+        .squad-list { display: flex; flex-direction: column; gap: 5px; }
+        .squad-empty { font-size: 0.8rem; color: var(--faint); }
+        .squad-player { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 4px 0; border-top: 1px solid var(--line); }
+        .squad-player:first-child { border-top: none; }
+        .sp-name { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sp-role { font-size: 0.66rem; color: var(--faint); }
+        .sp-price { font-family: var(--mono); color: var(--gold); font-size: 0.78rem; }
+
         /* ---------- Cards / panels ---------- */
         .panel {
             background: var(--panel); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
@@ -465,17 +509,17 @@
         .spin-caption { font-family: var(--display); font-size: 1.6rem; letter-spacing: 4px; color: var(--gold); text-transform: uppercase; }
 
         /* Bid board (right) */
-        .board { display: grid; grid-template-columns: 1.05fr 1fr; gap: 16px; }
+        .board { display: grid; grid-template-columns: 1.05fr 1fr; gap: 12px; }
         .bid-now {
             grid-column: 1 / -1; position: relative; overflow: hidden;
-            border-radius: var(--r-lg); padding: 22px 26px;
+            border-radius: var(--r-lg); padding: 16px 24px;
             background: linear-gradient(135deg, rgba(52,211,153,0.10), rgba(34,211,238,0.07));
             border: 1px solid rgba(52,211,153,0.3);
             transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
         }
         .bid-now .lbl { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--money); font-weight: 700; }
         .bid-now .amt {
-            font-family: var(--display); font-size: 5.2rem; line-height: 0.92; letter-spacing: 1px;
+            font-family: var(--display); font-size: 4.2rem; line-height: 0.92; letter-spacing: 1px;
             background: linear-gradient(180deg, #ffffff, #c7f9e8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 8px 40px rgba(52,211,153,0.4);
         }
@@ -493,9 +537,9 @@
         .amt.bump { animation: bump 0.4s cubic-bezier(0.2,1.4,0.4,1); }
         @keyframes bump { 0%{transform:scale(1);} 35%{transform:scale(1.13);} 100%{transform:scale(1);} }
 
-        .history { border-radius: var(--r-md); padding: 14px 16px; background: rgba(5,8,18,0.55); border: 1px solid var(--line); }
-        .history h4 { font-size: 0.66rem; letter-spacing: 2px; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; font-weight: 700; }
-        .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto; }
+        .history { border-radius: var(--r-md); padding: 11px 14px; background: rgba(5,8,18,0.55); border: 1px solid var(--line); }
+        .history h4 { font-size: 0.66rem; letter-spacing: 2px; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; font-weight: 700; }
+        .history-list { display: flex; flex-direction: column; gap: 5px; max-height: 108px; overflow-y: auto; }
         .h-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 6px 9px; border-radius: 8px; background: rgba(148,173,255,0.04); animation: fadeUp 0.25s; }
         .h-row .t { font-weight: 600; }
         .h-row .v { font-family: var(--mono); font-weight: 700; color: var(--money); }
@@ -505,10 +549,10 @@
 
         /* Team paddles */
         .paddles { grid-column: 1 / -1; }
-        .paddle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; }
+        .paddle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 10px; }
         .paddle {
             position: relative; text-align: left; cursor: pointer; overflow: hidden;
-            border-radius: var(--r-md); padding: 14px 16px; min-height: 96px; transition: all 0.18s;
+            border-radius: var(--r-md); padding: 11px 14px; min-height: 78px; transition: all 0.18s;
             display: flex; flex-direction: column; justify-content: center;
             background: linear-gradient(150deg, rgba(17,26,46,0.9), rgba(8,12,24,0.92));
             border: 1px solid var(--line); border-left: 3px solid var(--team, #5b6890);
@@ -528,11 +572,11 @@
         .paddle .crown { position: absolute; top: 8px; right: 9px; font-size: 0.85rem; }
         .paddle .kbd { position: absolute; bottom: 7px; right: 8px; font-family: var(--mono); font-size: 0.62rem; color: var(--faint); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
 
-        .action-bar { grid-column: 1 / -1; display: flex; gap: 14px; margin-top: 8px; }
+        .action-bar { grid-column: 1 / -1; display: flex; gap: 14px; margin-top: 4px; }
         .btn-sold {
             flex: 2.4; position: relative; overflow: hidden;
-            font-family: var(--display); font-size: 1.85rem; letter-spacing: 4px;
-            min-height: 74px; padding: 14px; border: none; border-radius: 16px;
+            font-family: var(--display); font-size: 1.7rem; letter-spacing: 4px;
+            min-height: 60px; padding: 12px; border: none; border-radius: 16px;
             color: #022a1c; -webkit-text-fill-color: #022a1c;
             background: linear-gradient(180deg, #5ff0bf 0%, var(--money) 46%, #1fae7d 100%);
             box-shadow: 0 0 0 1px rgba(120,255,214,0.55) inset, 0 1px 0 rgba(255,255,255,0.6) inset,
@@ -559,7 +603,7 @@
         @keyframes gavelTap { 0%,100%{ transform: rotate(0);} 35%{ transform: rotate(-22deg);} 60%{ transform: rotate(4deg);} }
 
         .btn-mansell {
-            flex: 1; min-height: 74px; border-radius: 16px; font-weight: 800; letter-spacing: 0.5px;
+            flex: 1; min-height: 60px; border-radius: 16px; font-weight: 800; letter-spacing: 0.5px;
             font-size: 1rem; transition: transform 0.08s ease, filter 0.2s ease;
         }
         .btn-mansell:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.05); }
@@ -626,6 +670,17 @@
         .sold-going { position:absolute; top: 26px; left: 50%; transform: translateX(-50%); z-index:5;
             font-family: var(--display); font-size: 1.4rem; letter-spacing: 4px; color: color-mix(in srgb, var(--tc,#f5b841) 90%, #fff); }
         @media (max-width: 760px){ .sold-card{ grid-template-columns: 1fr; text-align:center; } .sold-right{ display:none; } }
+
+        /* Team logo in the SOLD card */
+        .sold-team-logo { width: 46px; height: 46px; object-fit: contain; border-radius: 10px; background: rgba(255,255,255,0.06); }
+        .sold-logo-wrap { display: grid; place-items: center; gap: 16px; animation: photoSlam 0.6s cubic-bezier(0.16,1,0.3,1); }
+        .sold-logo-big {
+            width: 240px; height: 240px; max-width: 36vw; object-fit: contain; border-radius: 26px; padding: 18px;
+            background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--tc,#f5b841) 22%, rgba(255,255,255,0.04)), rgba(255,255,255,0.03));
+            border: 2px solid color-mix(in srgb, var(--tc,#f5b841) 55%, transparent);
+            box-shadow: 0 40px 90px -30px #000, 0 0 70px -10px color-mix(in srgb, var(--tc,#f5b841) 55%, transparent);
+        }
+        .sold-logo-cap { font-family: var(--head); font-weight: 700; font-size: 1.5rem; letter-spacing: 0.5px; color: #fff; }
 
         /* ====================== MODALS ====================== */
         .modal-bg { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; padding: 20px;
@@ -823,6 +878,7 @@ const DEFAULT_DATA = {
     ]},
     squadRules: { min: 11, max: 15, reservePerSlot: 100 },
     teamLoginEnabled: false,
+    teamBiddingEnabled: false,
     telegram: { enabled: false, token: '', chatId: '' },
   },
   state: {
@@ -844,7 +900,7 @@ function getDynamicIncrement(currentBid, settings) {
 // Squad-reserve affordability gate — identical math to original tool
 function paddleState(team, data) {
   const s = data.state, sq = data.settings.squadRules || { min: 11, max: 15, reservePerSlot: 100 };
-  const isLeader = s.currentBidder === team.id;
+  const isLeader = String(s.currentBidder) === String(team.id);
   const hasItem = !!s.currentItem;
   const actualCount = data.players.filter(p => p.soldTo === team.name && p.status === 'sold').length;
   const nextBid = s.currentBidder ? s.currentBid + getDynamicIncrement(s.currentBid, data.settings) : s.currentBid;
@@ -855,7 +911,11 @@ function paddleState(team, data) {
   const squadFull = actualCount >= sq.max;
   const cantFillSquad = budgetAfterBid < reserveNeeded;
   const disabled = !hasItem || cantAfford || squadFull || cantFillSquad || isLeader;
-  return { isLeader, actualCount, reserveNeeded, cantAfford, squadFull, cantFillSquad, disabled, max: sq.max };
+  let reason = '';
+  if (squadFull) reason = 'Squad full';
+  else if (cantAfford) reason = 'Not enough purse';
+  else if (cantFillSquad) reason = 'Need reserve for squad';
+  return { isLeader, actualCount, reserveNeeded, cantAfford, squadFull, cantFillSquad, disabled, reason, nextBid, max: sq.max };
 }
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -890,6 +950,53 @@ function tgPhotoFix(u) {
   // Telegram can't render SVG; dicebear can serve PNG from the same URL.
   if (typeof u === 'string' && u.indexOf('dicebear') > -1) return u.replace('/svg', '/png');
   return u;
+}
+function tgEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function buildStandings(data, soldCount) {
+  const sr = (data.settings && data.settings.squadRules) || { min: 11, max: 15 };
+  const max = sr.max || 15;
+  const roleIcon = (role) => {
+    const r = (role || '').toLowerCase();
+    if (r.includes('keep')) return '🧤';
+    if (r.includes('bowl')) return '🎯';
+    if (r.includes('all')) return '⭐';
+    return '🏏'; // batsman / default
+  };
+  const padEnd = (s, n) => { s = String(s); return s.length > n ? s.slice(0, n - 1) + '…' : s + ' '.repeat(n - s.length); };
+  const padStart = (s, n) => { s = String(s); return s.length >= n ? s : ' '.repeat(n - s.length) + s; };
+  const teams = [...data.teams].sort((a, b) => (b.playerCount || 0) - (a.playerCount || 0) || (b.remaining || 0) - (a.remaining || 0));
+  const totalSpent = (t) => (t.budget || 0) - (t.remaining || 0);
+
+  const blocks = teams.map((t, idx) => {
+    const bought = data.players.filter(p => p.status === 'sold' && p.soldTo === t.name);
+    const filled = bought.length;
+    const left = Math.max(0, max - filled);
+    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '▫️';
+    // squad progress bar (out of max)
+    const blocksFilled = Math.round((filled / max) * 10);
+    const bar = '▰'.repeat(blocksFilled) + '▱'.repeat(10 - blocksFilled);
+    const header =
+      `${medal} <b>${tgEsc(t.name)}</b>\n` +
+      `   <code>${bar}</code> ${filled}/${max}\n` +
+      `   💰 <b>${formatCr(t.remaining)}</b> left · spent ${formatCr(totalSpent(t))} · ${left} slots open`;
+    if (filled === 0) return header + '\n   <i>No players yet</i>';
+    const lines = bought.map(p =>
+      `${roleIcon(p.role)} ${padEnd(p.name, 17)}${padStart(formatCr(p.soldPrice), 8)}`
+    );
+    return header + '\n<pre>' + tgEsc(lines.join('\n')) + '</pre>';
+  });
+
+  const totalSold = data.players.filter(p => p.status === 'sold').length;
+  const totalValue = data.teams.reduce((s, t) => s + totalSpent(t), 0);
+  const head =
+    `🏆 <b>AUCTION STANDINGS</b>\n` +
+    `<i>${soldCount} sold so far · ₹${formatCr(totalValue)} spent</i>\n` +
+    `━━━━━━━━━━━━━━━`;
+  let msg = head + '\n\n' + blocks.join('\n\n');
+  if (msg.length > 4000) msg = msg.slice(0, 3990) + '\n…(truncated)';
+  return msg;
 }
 function tgText(tg, caption) {
   const params = new URLSearchParams();
@@ -1214,6 +1321,17 @@ function SetupView({ data, mutate, toast, fileImportExcel, exportExcel, exportJS
             <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Give each team a private planning room on their own device</span>
           </label>
           <p className="hint">When on, teams join with their name + a 4-digit code (shown in the Teams panel; tap a code to regenerate). Their room shows the players left, a target-budget calculator, and every team's live purse — but they can't bid. You stay the only auctioneer. Codes are a friendly gate for a live room, not bank-grade security.</p>
+          <div className="divider" style={{ margin: '14px 0' }} />
+          <label className="switch" style={{ marginBottom: 10, opacity: s.teamLoginEnabled ? 1 : 0.5 }}>
+            <input type="checkbox" disabled={!s.teamLoginEnabled} checked={!!s.teamBiddingEnabled} onChange={e => {
+              const on = e.target.checked;
+              mutate(d => { d.settings.teamBiddingEnabled = on; });
+              toast(on ? 'Teams can now bid from their own pages' : 'Team bidding turned off — planning only', on ? 'ok' : 'info');
+            }} />
+            <span className="track" />
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Let teams place bids from their own login page</span>
+          </label>
+          <p className="hint">{s.teamLoginEnabled ? "When on, each team's room gets a live BID button to raise the current bid on the player on the block. You still hammer SOLD, skip, and unsold — teams only raise bids. When off, team rooms stay planning-only." : "Turn on Team Planning Rooms first to enable team bidding."}</p>
         </div>
 
         {/* TELEGRAM */}
@@ -1447,21 +1565,28 @@ function AuctionView({ data, mutate, isAdmin, toast, openManualSell, openEditUnu
   const finalizeSale = (p, team, price) => {
     Sound.sold();
     const remainingAfter = (team.remaining || 0) - price;
+    let soldCountAfter = 0, snapAfter = null;
     mutate(d => {
       const rp = d.players.find(x => x.id === p.id);
       if (rp) { rp.status = 'sold'; rp.soldTo = team.name; rp.soldPrice = price; }
       const tm = d.teams.find(t => t.id === team.id);
       tm.remaining -= price; tm.playerCount = (tm.playerCount || 0) + 1; tm.players.push(p.id);
-      d.state.lastSale = { playerId: p.id, name: p.name, role: p.role, img: p.img, team: team.name, price, ts: Date.now() };
+      d.state.lastSale = { playerId: p.id, name: p.name, role: p.role, img: p.img, team: team.name, teamLogo: team.logo || '', price, ts: Date.now() };
       d.state.currentItem = null; d.state.currentBid = 0; d.state.currentBidder = null; d.state.bidHistory = [];
       const { pool, nextSetIndex } = computePending(d);
       d.state.currentSetIndex = nextSetIndex; d.state.pendingPool = pool;
+      soldCountAfter = d.players.filter(x => x.status === 'sold').length;
+      snapAfter = clone(d);
     });
     // Push a SOLD card to Telegram (admin device only — viewers/teams never sell)
     const tg = data.settings.telegram;
     if (tg && tg.enabled && tg.token && tg.chatId) {
       const cap = `🔨 <b>SOLD</b>\n\n🏏 <b>${p.name}</b> · ${p.role}\n💰 <b>${formatCr(price)}</b>\n🛡 ${team.name}\n\n${team.name} purse left: <b>${formatCr(remainingAfter)}</b>`;
       tgSend(tg, { photo: p.img, caption: cap }).catch(e => console.error('telegram', e));
+      // Every 4 sales, post the full team-sheet standings.
+      if (soldCountAfter > 0 && soldCountAfter % 4 === 0 && snapAfter) {
+        setTimeout(() => tgSend(tg, { photo: '', caption: buildStandings(snapAfter, soldCountAfter) }).catch(e => console.error('telegram', e)), 900);
+      }
     }
   };
 
@@ -2098,7 +2223,9 @@ function SoldOverlay({ sale, onClose }) {
           <div className="sold-price-lbl">Hammer price</div>
           <div className="sold-price">{formatCr(Math.round(price))}</div>
           <div className="sold-team">
-            <div className="tdot">{initials(sale.team)}</div>
+            {sale.teamLogo
+              ? <img className="sold-team-logo" src={sale.teamLogo} alt={sale.team} />
+              : <div className="tdot" style={{ background: tc }}>{initials(sale.team)}</div>}
             <div>
               <div className="tl">Sold to</div>
               <div className="tn" style={{ color: '#fff' }}>{sale.team}</div>
@@ -2106,9 +2233,11 @@ function SoldOverlay({ sale, onClose }) {
           </div>
         </div>
         <div className="sold-right">
-          {sale.img
-            ? <img className="sold-photo" src={sale.img} alt={sale.name} />
-            : <div className="sold-photo-ph">{(sale.name || '?')[0]}</div>}
+          {sale.teamLogo
+            ? <div className="sold-logo-wrap" style={{ '--tc': tc }}><img className="sold-logo-big" src={sale.teamLogo} alt={sale.team} /><div className="sold-logo-cap">{sale.team}</div></div>
+            : sale.img
+              ? <img className="sold-photo" src={sale.img} alt={sale.name} />
+              : <div className="sold-photo-ph">{(sale.name || '?')[0]}</div>}
         </div>
       </div>
       <button className="btn btn-gold sold-next" onClick={onClose}>Next player →</button>
@@ -2116,8 +2245,8 @@ function SoldOverlay({ sale, onClose }) {
   );
 }
 
-/* ============================ TEAM WAR ROOM (XI planner, no bidding) ============================ */
-function TeamRoomView({ data, myTeamId, plan, updatePlan, clearPlan, toast }) {
+/* ============================ TEAM WAR ROOM (XI planner + optional bidding) ============================ */
+function TeamRoomView({ data, myTeamId, plan, updatePlan, clearPlan, toast, mutate }) {
   const [addSlot, setAddSlot] = useState(0);
   const [addPid, setAddPid] = useState('');
   const [addCr, setAddCr] = useState('');
@@ -2126,10 +2255,34 @@ function TeamRoomView({ data, myTeamId, plan, updatePlan, clearPlan, toast }) {
   const st = data.state || {};
   if (!me) return <div className="panel panel-pad empty-note section-fade">Your team isn't in the auction anymore.</div>;
 
+  const biddingOn = !!(data.settings.teamLoginEnabled && data.settings.teamBiddingEnabled);
   const slots = (plan && plan.slots) || [];
   const pById = (id) => data.players.find(p => String(p.id) === String(id));
   const liveItem = st.auctionStarted && st.currentItem ? st.currentItem : null;
   const leader = liveItem && st.currentBidder ? data.teams.find(t => String(t.id) === String(st.currentBidder)) : null;
+
+  // Team places a bid on the live player (admin still hammers SOLD). Race-guarded inside mutate.
+  const myBid = () => {
+    if (!biddingOn || !mutate) return;
+    if (!liveItem) return toast('No player is up for bidding', 'warn');
+    const ps = paddleState(me, data);
+    if (ps.isLeader) return toast("You're already the top bidder", 'info');
+    if (ps.disabled) return toast(ps.reason || "You can't bid right now", 'warn');
+    const targetBid = ps.nextBid;
+    mutate(d => {
+      const s = d.state;
+      if (!s.currentItem) return;                    // player just got sold/skipped
+      const inc = getDynamicIncrement(s.currentBid, d.settings);
+      const newBid = s.currentBidder ? s.currentBid + inc : s.currentBid;
+      if (String(s.currentBidder) === String(me.id)) return;   // already leading
+      if (newBid !== targetBid) { /* someone moved first — still apply the correct next bid */ }
+      if (!s.bidHistory) s.bidHistory = [];
+      s.bidHistory.push({ bid: s.currentBid, bidder: s.currentBidder });
+      s.currentBid = newBid; s.currentBidder = me.id;
+    });
+    Sound.bid && Sound.bid();
+  };
+  const myPs = biddingOn ? paddleState(me, data) : null;
 
   const candStatus = (c) => {
     const p = pById(c.playerId);
@@ -2182,6 +2335,93 @@ function TeamRoomView({ data, myTeamId, plan, updatePlan, clearPlan, toast }) {
 
   return (
     <div className="section-fade warroom">
+      {/* LIVE BID BAR — top priority when bidding is on and a player is up */}
+      {biddingOn && liveItem && (
+        <div className="panel panel-pad bidbar" style={{ '--team': teamColor(me.name) }}>
+          <div className="bidbar-info">
+            {liveItem.img ? <img className="bidbar-img" src={liveItem.img} alt="" /> : <div className="bidbar-ph">{(liveItem.name || '?')[0]}</div>}
+            <div>
+              <div className="bidbar-name">{liveItem.name} <span className="bidbar-role">{liveItem.role}</span></div>
+              <div className="bidbar-cur">Current: <b>{formatCr(st.currentBid || liveItem.basePrice)}</b> {leader && <span style={{ color: teamColor(leader.name) }}>· {leader.name}</span>}</div>
+              {liveSlot >= 0 && <div className="hint" style={{ display: 'block', color: 'var(--gold)' }}>On your plan — Slot {liveSlot + 1}</div>}
+            </div>
+          </div>
+          <div className="bidbar-action">
+            {myPs && myPs.isLeader ? (
+              <div className="teambid-lead" style={{ '--team': teamColor(me.name) }}>✓ Top bidder<br />{formatCr(st.currentBid)}</div>
+            ) : (
+              <button className="btn btn-bid" style={{ '--team': teamColor(me.name) }} disabled={myPs && myPs.disabled} onClick={myBid}>
+                <span className="bid-lbl">{(myPs && myPs.disabled) ? (myPs.reason || 'Can’t bid') : 'BID'}</span>
+                {!(myPs && myPs.disabled) && <span className="bid-amt">{formatCr(myPs ? myPs.nextBid : st.currentBid)}</span>}
+              </button>
+            )}
+            <div className="hint" style={{ textAlign: 'center', marginTop: 6 }}>Purse: <b style={{ color: 'var(--money)' }}>{formatCr(me.remaining)}</b></div>
+          </div>
+        </div>
+      )}
+
+      {/* Bidding on, but no player up yet — show a clear waiting state */}
+      {biddingOn && !liveItem && (
+        <div className="panel panel-pad bidbar bidbar-wait" style={{ '--team': teamColor(me.name) }}>
+          <div className="bidbar-info">
+            <div className="bidbar-ph">⏳</div>
+            <div>
+              <div className="bidbar-name">Bidding is live for your team</div>
+              <div className="bidbar-cur">Waiting for the auctioneer to bring up the next player — your BID button appears here.</div>
+            </div>
+          </div>
+          <div className="bidbar-action">
+            <div className="hint" style={{ textAlign: 'center' }}>Purse: <b style={{ color: 'var(--money)' }}>{formatCr(me.remaining)}</b></div>
+          </div>
+        </div>
+      )}
+
+      {/* Planning-only: compact live player strip (bidding off) */}
+      {!biddingOn && liveItem && (
+        <div className="panel panel-pad bidbar" style={{ '--team': teamColor(me.name) }}>
+          <div className="bidbar-info">
+            {liveItem.img ? <img className="bidbar-img" src={liveItem.img} alt="" /> : <div className="bidbar-ph">{(liveItem.name || '?')[0]}</div>}
+            <div>
+              <div className="bidbar-name">{liveItem.name} <span className="bidbar-role">{liveItem.role}</span></div>
+              <div className="bidbar-cur">On the block · Current: <b>{formatCr(st.currentBid || liveItem.basePrice)}</b> {leader && <span style={{ color: teamColor(leader.name) }}>· {leader.name}</span>}</div>
+              {liveSlot >= 0 && <div className="hint" style={{ display: 'block', color: 'var(--gold)' }}>On your plan — Slot {liveSlot + 1}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TEAMS & SQUADS — clubbed: purse + who's bought who */}
+      <div className="panel panel-pad">
+        <div className="panel-head"><span className="eyebrow">Squads</span><h2>Teams, purse & who's bought who</h2></div>
+        <div className="squad-grid">
+          {[...data.teams].sort((a, b) => b.remaining - a.remaining).map(t => {
+            const max = (data.settings.squadRules && data.settings.squadRules.max) || 15;
+            const bought = data.players.filter(p => p.status === 'sold' && p.soldTo === t.name);
+            const left = Math.max(0, max - bought.length);
+            const mine = String(t.id) === String(myTeamId);
+            return (
+              <div key={t.id} className={'squad-card' + (mine ? ' me' : '')} style={{ '--team': teamColor(t.name) }}>
+                <div className="squad-head">
+                  <span className="squad-name">{t.name}{mine ? ' (you)' : ''}</span>
+                  <span className="squad-purse">{formatCr(t.remaining)}</span>
+                </div>
+                <div className="squad-sub">{bought.length} bought · {left} slots open</div>
+                <div className="squad-list">
+                  {bought.length === 0 ? <div className="squad-empty">No players yet</div> :
+                    bought.map(p => (
+                      <div key={p.id} className="squad-player">
+                        <span className="sp-name">{p.name}</span>
+                        <span className="sp-role">{p.role}</span>
+                        <span className="sp-price">{formatCr(p.soldPrice)}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* CALCULATOR */}
       <div className="panel panel-pad calc-card" style={{ '--team': teamColor(me.name) }}>
         <div className="calc-head">
@@ -2208,9 +2448,9 @@ function TeamRoomView({ data, myTeamId, plan, updatePlan, clearPlan, toast }) {
         </div>
       </div>
 
-      {/* BUILD XI */}
+      {/* BUILD XI — players I want to buy */}
       <div className="panel panel-pad">
-        <div className="panel-head"><span className="eyebrow">Build</span><h2>Your XI — up to 4 options per slot</h2></div>
+        <div className="panel-head"><span className="eyebrow">Build</span><h2>Players I want — up to 4 options per slot</h2></div>
         <div className="addbar">
           <select className="input" value={addPid} onChange={e => pickPlayer(e.target.value)}>
             <option value="">— Pick a player ({avail.length} left) —</option>
@@ -2224,7 +2464,7 @@ function TeamRoomView({ data, myTeamId, plan, updatePlan, clearPlan, toast }) {
           <div className="addbar-cr"><span>Cr</span><input className="input" type="number" min="0" step="0.1" value={addCr} placeholder="base" onChange={e => setAddCr(e.target.value)} /></div>
           <button className="btn btn-gold" onClick={addToSlot}>Add</button>
         </div>
-        <p className="hint">Add who you want for each slot — line up to 4 options (top one is your pick; the rest are back-ups if it's sold). The calculator counts your top still-available option per slot. Private to your team; never places a bid.</p>
+        <p className="hint">Add who you want for each slot — line up to 4 options (top one is your pick; the rest are back-ups if it's sold). The calculator counts your top still-available option per slot. Private to your team.</p>
 
         <div className="xi-grid">
           {slots.map((cands, si) => {
@@ -2269,39 +2509,6 @@ function TeamRoomView({ data, myTeamId, plan, updatePlan, clearPlan, toast }) {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* LIVE NOW + OTHER TEAMS */}
-      <div className="grid g-2" style={{ alignItems: 'start' }}>
-        <div className="panel panel-pad">
-          <div className="panel-head"><span className="eyebrow">Live</span><h2>On the block now</h2></div>
-          {liveItem ? (
-            <div className="livenow">
-              {liveItem.img ? <img src={liveItem.img} alt="" /> : <div className="ph">{(liveItem.name || '?')[0]}</div>}
-              <div style={{ flex: 1 }}>
-                <div className="ln-name">{liveItem.name}</div>
-                <div className="ln-role">{liveItem.role} · base {formatCr(liveItem.basePrice)}</div>
-                <div className="ln-bid">{formatCr(st.currentBid || liveItem.basePrice)} {leader && <span className="ln-leader" style={{ color: teamColor(leader.name) }}>· {leader.name}</span>}</div>
-                {liveSlot >= 0 && <div className="hint" style={{ display: 'block', color: 'var(--gold)' }}>On your plan — Slot {liveSlot + 1}</div>}
-                <PlayerStats stats={liveItem.stats} compact />
-              </div>
-            </div>
-          ) : <div className="empty-note" style={{ padding: 14 }}>Nothing up for bidding right now.</div>}
-        </div>
-
-        <div className="panel panel-pad">
-          <div className="panel-head"><span className="eyebrow">Live</span><h2>Teams & purse</h2></div>
-          <div className="teams-purse">
-            {[...data.teams].sort((a, b) => b.remaining - a.remaining).map(t => (
-              <div key={t.id} className={'tp-row' + (String(t.id) === String(myTeamId) ? ' me' : '')} style={{ '--team': teamColor(t.name) }}>
-                <span className="tp-dot" />
-                <span className="tp-name">{t.name}{String(t.id) === String(myTeamId) ? ' (you)' : ''}</span>
-                <span className="tp-count">{t.playerCount || 0}</span>
-                <span className="tp-purse">{formatCr(t.remaining)}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
@@ -2678,7 +2885,7 @@ function App() {
   const view = (() => {
     // Logged-in teams are locked to their War Room — no other view renders.
     if (myTeamId && !isAdmin) {
-      return <TeamRoomView data={data} myTeamId={myTeamId} plan={plan} updatePlan={updatePlan} clearPlan={clearPlan} toast={toast} />;
+      return <TeamRoomView data={data} myTeamId={myTeamId} plan={plan} updatePlan={updatePlan} clearPlan={clearPlan} toast={toast} mutate={mutate} />;
     }
     switch (tab) {
       case 'setup': return isAdmin ? <SetupView data={data} mutate={mutate} toast={toast}
@@ -2686,7 +2893,7 @@ function App() {
         importJSON={importJSON} sampleExcel={sampleExcel} resetAll={resetAll} /> : null;
       case 'teams': return <TeamsView data={data} exportSquads={exportSquads} />;
       case 'dashboard': return <DashboardView data={data} />;
-      case 'warroom': return myTeamId ? <TeamRoomView data={data} myTeamId={myTeamId} plan={plan} updatePlan={updatePlan} clearPlan={clearPlan} toast={toast} /> : null;
+      case 'warroom': return myTeamId ? <TeamRoomView data={data} myTeamId={myTeamId} plan={plan} updatePlan={updatePlan} clearPlan={clearPlan} toast={toast} mutate={mutate} /> : null;
       case 'players': return <PlayersView data={data} mutate={mutate} isAdmin={isAdmin} toast={toast}
         openPreAssign={openPreAssign} openEditSale={openEditSale} />;
       case 'auction':
