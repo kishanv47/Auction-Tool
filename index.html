@@ -446,7 +446,7 @@
         .statcard.compact .sl { font-size: 0.5rem; }
 
         /* SPIN reel */
-        .spin-zone { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; z-index: 5; }
+        .spin-zone { position: absolute; inset: 0; min-height: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; z-index: 5; padding: 24px 16px; }
         .reel-window {
             width: 250px; height: 320px; border-radius: 18px; overflow: hidden; position: relative;
             border: 1px solid var(--line-strong); background: #06090f;
@@ -571,7 +571,7 @@
 
         @media (max-width: 1080px) {
             .arena { grid-template-columns: 1fr; }
-            .stage { min-height: auto; }
+            .stage { min-height: 420px; }
         }
 
         /* ====================== CINEMATIC SOLD ====================== */
@@ -886,24 +886,35 @@ function dataURItoBlob(dataURI) {
   return new Blob([arr], { type: mime });
 }
 // Send to Telegram from the browser. Uses no-preflight request shapes so it isn't blocked by CORS.
+function tgPhotoFix(u) {
+  // Telegram can't render SVG; dicebear can serve PNG from the same URL.
+  if (typeof u === 'string' && u.indexOf('dicebear') > -1) return u.replace('/svg', '/png');
+  return u;
+}
+function tgText(tg, caption) {
+  const params = new URLSearchParams();
+  params.set('chat_id', tg.chatId); params.set('parse_mode', 'HTML'); params.set('text', caption);
+  return fetch('https://api.telegram.org/bot' + tg.token + '/sendMessage', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() }).then(r => r.json());
+}
 function tgSend(tg, opts) {
   const base = 'https://api.telegram.org/bot' + tg.token + '/';
-  const photo = opts.photo, caption = opts.caption;
+  let photo = opts.photo; const caption = opts.caption;
   const isData = typeof photo === 'string' && photo.indexOf('data:') === 0;
   const isUrl = typeof photo === 'string' && /^https?:\/\//i.test(photo);
+  // If the photo can't be sent (unsupported format, unreachable), still deliver the details as text.
+  const orText = (res) => (res && res.ok) ? res : tgText(tg, caption);
   if (isData) {
     const fd = new FormData();
     fd.append('chat_id', tg.chatId); fd.append('caption', caption); fd.append('parse_mode', 'HTML');
     fd.append('photo', dataURItoBlob(photo), 'player.jpg');
-    return fetch(base + 'sendPhoto', { method: 'POST', body: fd }).then(r => r.json());
+    return fetch(base + 'sendPhoto', { method: 'POST', body: fd }).then(r => r.json()).then(orText).catch(() => tgText(tg, caption));
   }
-  const params = new URLSearchParams();
-  params.set('chat_id', tg.chatId); params.set('parse_mode', 'HTML');
-  if (isUrl) { params.set('photo', photo); params.set('caption', caption);
-    return fetch(base + 'sendPhoto', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() }).then(r => r.json());
+  if (isUrl) {
+    const params = new URLSearchParams();
+    params.set('chat_id', tg.chatId); params.set('parse_mode', 'HTML'); params.set('photo', tgPhotoFix(photo)); params.set('caption', caption);
+    return fetch(base + 'sendPhoto', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() }).then(r => r.json()).then(orText).catch(() => tgText(tg, caption));
   }
-  params.set('text', caption);
-  return fetch(base + 'sendMessage', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() }).then(r => r.json());
+  return tgText(tg, caption);
 }
 
 /* ============================ SOUND ENGINE ============================ */
